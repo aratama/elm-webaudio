@@ -1,42 +1,14 @@
 module WebAudio exposing
-    ( AudioBufferUrl(..)
-    , AudioGraph
-    , AudioNode
-    , AudioNodeId(..)
-    , AudioNodeProps(..)
-    , AudioOutput(..)
-    , AudioParam(..)
-    , AudioParamMethod(..)
-    , AudioTime(..)
-    , DynamicsCompressorProps
-    , Float32Array
-    , Oversample(..)
-    , dynamicsCompressor
-    , dynamicsCompressorDefaults
-    , output
+    ( output
     , toHtml
+    , AudioBufferUrl(..), AudioGraph, AudioNode, AudioNodeId(..), AudioNodeProps(..), AudioOutput(..), AudioParam(..), AudioParamMethod(..), AudioTime(..), DynamicsCompressorProps, Float32Array, Oversample(..), dynamicsCompressor, dynamicsCompressorDefaults
     )
 
 {-| elm-webaudio provides methods to play audio in Elm.
-elm-webaudio interacts with out of port in the same manner as [elm-canvas](https://github.com/joakin/elm-canvas).
-It supports not only representing an audio graph with data types but also passing the graph to JS side through custom element and rendering actual audio graph.
 
+@docs output
 
-## Minimal Example
-
-    render =
-        WebAudio.toHtml { graph = [ Oscillator { id = "osci", frequency = 440, output = [ WebAudio.output ] } ] }
-
-
-## Tick
-
-elm-webausio provides `tick` custom event.
-
-
-## Related Packages
-
-  - [pd-andy/elm-audio-graph](https://package.elm-lang.org/packages/pd-andy/elm-audio-graph/latest/)
-  - [flowlang-cc/elm-audio-graph](https://package.elm-lang.org/packages/flowlang-cc/elm-audio-graph/latest/)
+@docs toHtml
 
 -}
 
@@ -48,20 +20,22 @@ import Json.Encode exposing (Value, bool, float, int, list, null, object, string
 import List
 
 
-
--- types
-
-
+{-| Unique identifier of audio nodes in the audio graph.
+-}
 type AudioNodeId
     = AudioNodeId String
 
 
+{-| Audio output.
+-}
 type AudioOutput
     = Output AudioNodeId
     | Outputs (List AudioNodeId)
     | KeyWithDestination { key : AudioNodeId, destination : Destination }
 
 
+{-| Propertiy name as a audio output destination.
+-}
 type Destination
     = FrequencyProp
     | DetuneProp
@@ -70,18 +44,27 @@ type Destination
     | PanProp
 
 
+{-| URL for an audio buffer. Elm can't deal AudioBuffer objects directly
+and Just a string as URL instead of AudioBuffer object.
+-}
 type AudioBufferUrl
     = AudioBufferUrl String
 
 
+{-| Float value representing the audio time.
+-}
 type AudioTime
     = AudioTime Float
 
 
+{-| Identifier for MediaElement.
+-}
 type MediaElementId
     = MediaElementId String
 
 
+{-| AudioParam.
+-}
 type AudioParam
     = Constant Float
     | Methods (List AudioParamMethod)
@@ -95,6 +78,8 @@ type AudioParamMethod
     | SetValueCurveAtTime (List Float) AudioTime Float
 
 
+{-| An enumerated value for `type` property of `BiquadFilter`.
+-}
 type BiquadFilterType
     = Lowpass
     | Highpass
@@ -234,10 +219,8 @@ output =
     Output (AudioNodeId "output")
 
 
-
--- html
-
-
+{-| Render an audio graph as HTML.
+-}
 toHtml :
     { graph : AudioGraph
     , assets : List String
