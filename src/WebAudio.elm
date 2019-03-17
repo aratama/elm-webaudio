@@ -292,15 +292,15 @@ toHtml :
     { graph : AudioGraph
     , assets : List String
     , onTick : Float -> msg
-    , onInstrumentLoaded : List String -> msg
+    , onAssetLoaded : List String -> msg
     }
     -> Html.Html msg
-toHtml { graph, assets, onTick, onInstrumentLoaded } =
+toHtml { graph, assets, onTick, onAssetLoaded } =
     Html.node "elm-webaudio"
         [ Html.Attributes.property "graph" (encode graph)
         , Html.Attributes.property "assets" (Json.Encode.list Json.Encode.string assets)
         , Html.Events.on "tick" <| Json.Decode.map onTick (Json.Decode.at [ "detail" ] Json.Decode.float)
-        , Html.Events.on "instrumentloaded" <| Json.Decode.map onInstrumentLoaded (Json.Decode.at [ "detail" ] (Json.Decode.list Json.Decode.string))
+        , Html.Events.on "assetLoaded" <| Json.Decode.map onAssetLoaded (Json.Decode.at [ "detail" ] (Json.Decode.list Json.Decode.string))
         ]
         []
 

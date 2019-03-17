@@ -11,5 +11,8 @@
     "docs": "elm make --docs=docs.json"
   },
   "author": "aratama",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "virtual-audio-graph": "^1.1.0"
+  }
 }
