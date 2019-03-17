@@ -1,8 +1,9 @@
 module Main exposing (Model, Msg(..), init, main, update, view)
 
 import Browser
-import Html exposing (Html, div, h1, img, text)
+import Html exposing (Html, button, div, h1, img, text)
 import Html.Attributes exposing (src)
+import Html.Events exposing (onClick)
 import WebAudio
 
 
@@ -11,12 +12,12 @@ import WebAudio
 
 
 type alias Model =
-    {}
+    { playing : Bool }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( {}, Cmd.none )
+    ( { playing = False }, Cmd.none )
 
 
 
@@ -26,6 +27,8 @@ init =
 type Msg
     = AssetLoaded (List String)
     | Tick Float
+    | Play
+    | Stop
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -36,6 +39,12 @@ update msg model =
 
         Tick audioTIme ->
             ( model, Cmd.none )
+
+        Play ->
+            ( { model | playing = True }, Cmd.none )
+
+        Stop ->
+            ( { model | playing = False }, Cmd.none )
 
 
 
@@ -55,11 +64,11 @@ node nodeNumber pos =
     }
 
 
-graph : WebAudio.AudioGraph
-graph =
+kaeru : WebAudio.AudioGraph
+kaeru =
     [ { id = WebAudio.AudioNodeId "gain"
       , output = WebAudio.output
-      , properties = WebAudio.Gain { gain = WebAudio.Constant 0.01 }
+      , properties = WebAudio.Gain { gain = WebAudio.Constant 0.05 }
       }
     , node 0 1
     , node 2 2
@@ -71,14 +80,41 @@ graph =
     ]
 
 
+graph : WebAudio.AudioGraph
+graph =
+    [ { id = WebAudio.AudioNodeId "buffersource"
+      , output = WebAudio.output
+      , properties =
+            WebAudio.BufferSource
+                { buffer = WebAudio.AudioBufferUrl "New_Place_of_Work.mp3"
+                , detune = 0
+                , startTime = WebAudio.AudioTime 1
+                , stopTime = Nothing
+                }
+      }
+    ]
+
+
 view : Model -> Html Msg
 view model =
     div []
         [ img [ src "/logo.svg" ] []
         , h1 [] [ text "Your Elm App is working!" ]
+        , if model.playing then
+            button [ onClick Stop ] [ text "Stop Music" ]
+
+          else
+            button [ onClick Play ] [ text "Play Music" ]
         , WebAudio.toHtml
             { graph =
-                graph
+                List.concat
+                    [ kaeru
+                    , if model.playing then
+                        graph
+
+                      else
+                        []
+                    ]
             , assets = []
             , onAssetLoaded = AssetLoaded
             , onTick = Tick

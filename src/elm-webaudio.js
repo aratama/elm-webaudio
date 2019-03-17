@@ -24,6 +24,7 @@ customElements.define(
         constructor() {
             super();
             this.virtualAudioGraph = createVirtualAudioGraph();
+            this.audioGraphJson = [];
             this.audioBufferMap = new Map();
             this.timerEnabled = true;
             this.wait = 40;
@@ -38,6 +39,7 @@ customElements.define(
         }
 
         set graph(value) {
+            this.audioGraphJson = value;
             this.virtualAudioGraph.update(this.jsonToVirtualWebAudioGraph(value));
         }
 
@@ -156,19 +158,18 @@ customElements.define(
             } else if (buffer) {
                 return buffer;
             } else {
-                const go = async () => {
-                    try {
-                        this.audioBufferMap.set(url, "loading");
-                        const response = await fetch(url);
-                        const arrayBuffer = await response.arrayBuffer();
-                        const decoded = await this.virtualAudioGraph.audioContext.decodeAudioData(arrayBuffer);
-                        this.audioBufferMap.set(url, decoded);
-                    } catch (e) {
-                        console.error(url)
-                    }
-                    // TODO: repaint?
-                }
-                go();
+                this.audioBufferMap.set(url, "loading");
+                fetch(url).then(response => {
+                    response.arrayBuffer().then(arrayBuffer => {
+                        this.virtualAudioGraph.audioContext.decodeAudioData(arrayBuffer).then(decoded => {
+                            this.audioBufferMap.set(url, decoded);
+                            this.virtualAudioGraph.update(this.jsonToVirtualWebAudioGraph(this.audioGraphJson));
+
+                        })
+                    })
+                }).catch(err => {
+                    console.error(url + err);
+                });
                 return null;
             }
         }
