@@ -1,14 +1,64 @@
 module WebAudio exposing
-    ( output
+    ( AudioBufferUrl(..)
+    , AudioGraph
+    , AudioNode
+    , AudioNodeId(..)
+    , AudioNodeProps(..)
+    , AudioOutput(..)
+    , AudioParam(..)
+    , AudioParamMethod(..)
+    , AudioTime(..)
+    , DynamicsCompressorProps
+    , Float32Array
+    , Oversample(..)
     , toHtml
-    , AudioBufferUrl(..), AudioGraph, AudioNode, AudioNodeId(..), AudioNodeProps(..), AudioOutput(..), AudioParam(..), AudioParamMethod(..), AudioTime(..), DynamicsCompressorProps, Float32Array, Oversample(..), dynamicsCompressor, dynamicsCompressorDefaults
+    , output
+    , dynamicsCompressor
+    , dynamicsCompressorDefaults
     )
 
 {-| elm-webaudio provides methods to play audio in Elm.
 
-@docs output
+
+# Types
+
+@docs AudioBufferUrl
+
+@docs AudioGraph
+
+@docs AudioNode
+
+@docs AudioNodeId
+
+@docs AudioNodeProps
+
+@docs AudioOutput
+
+@docs AudioParam
+
+@docs AudioParamMethod
+
+@docs AudioTime
+
+@docs DynamicsCompressorProps
+
+@docs Float32Array
+
+@docs Oversample
+
+
+# Rendering
 
 @docs toHtml
+
+
+# Utility
+
+@docs output
+
+@docs dynamicsCompressor
+
+@docs dynamicsCompressorDefaults
 
 -}
 
@@ -51,7 +101,7 @@ type AudioBufferUrl
     = AudioBufferUrl String
 
 
-{-| Float value representing the audio time.
+{-| Float value representing audio time.
 -}
 type AudioTime
     = AudioTime Float
@@ -70,6 +120,7 @@ type AudioParam
     | Methods (List AudioParamMethod)
 
 
+{-| -}
 type AudioParamMethod
     = SetValueAtTime Float AudioTime
     | LinearRampToValueAtTime Float AudioTime
@@ -91,27 +142,32 @@ type BiquadFilterType
     | Allpass
 
 
+{-| -}
 type PanningModel
     = Equalpower
     | HRTF
 
 
+{-| -}
 type DistanceModel
     = Linear
     | Inverse
     | Exponential
 
 
+{-| -}
 type alias Float32Array =
     List Float
 
 
+{-| -}
 type Oversample
     = OversampleNone
     | Oversample2x
     | Oversample4x
 
 
+{-| -}
 type AudioNodeProps
     = Analyser
         { fftSize : Int
@@ -179,6 +235,8 @@ type AudioNodeProps
         }
 
 
+{-| Audio node.
+-}
 type alias AudioNode =
     { id : AudioNodeId
     , output : AudioOutput
@@ -186,10 +244,14 @@ type alias AudioNode =
     }
 
 
+{-| Audio graph.
+-}
 type alias AudioGraph =
     List AudioNode
 
 
+{-| Data type for DynamicsCompresor.
+-}
 type alias DynamicsCompressorProps =
     { attack : AudioParam
     , knee : AudioParam
@@ -199,6 +261,7 @@ type alias DynamicsCompressorProps =
     }
 
 
+{-| -}
 dynamicsCompressorDefaults : DynamicsCompressorProps
 dynamicsCompressorDefaults =
     { attack = Constant 0.003
@@ -209,11 +272,15 @@ dynamicsCompressorDefaults =
     }
 
 
+{-| Utility constructor for a DynaicCompressor.
+-}
 dynamicsCompressor : (DynamicsCompressorProps -> DynamicsCompressorProps) -> AudioNodeProps
 dynamicsCompressor f =
     DynamicsCompressor (f dynamicsCompressorDefaults)
 
 
+{-| Special identifier representing final destination.
+-}
 output : AudioOutput
 output =
     Output (AudioNodeId "output")

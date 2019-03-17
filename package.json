@@ -7,7 +7,8 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "elm-app test"
+    "test": "elm-app test",
+    "docs": "elm make --docs=docs.json"
   },
   "author": "aratama",
   "license": "ISC"
