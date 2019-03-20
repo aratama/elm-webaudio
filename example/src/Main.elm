@@ -1,7 +1,7 @@
 module Main exposing (Model, Msg(..), init, main, update, view)
 
 import Browser
-import Html exposing (Html, button, div, h1, img, text)
+import Html exposing (Html, button, div, h1, h2, img, text)
 import Html.Attributes exposing (src)
 import Html.Events exposing (onClick)
 import WebAudio
@@ -12,12 +12,20 @@ import WebAudio
 
 
 type alias Model =
-    { playing : Bool }
+    { now : Float
+    , kaeru : Maybe Float
+    , playing : Maybe Float
+    }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { playing = False }, Cmd.none )
+    ( { now = 0
+      , kaeru = Nothing
+      , playing = Nothing
+      }
+    , Cmd.none
+    )
 
 
 
@@ -27,6 +35,8 @@ init =
 type Msg
     = AssetLoaded (List String)
     | Tick Float
+    | PlayKaeru
+    | StopKaeru
     | Play
     | Stop
 
@@ -38,82 +48,89 @@ update msg model =
             ( model, Cmd.none )
 
         Tick audioTIme ->
-            ( model, Cmd.none )
+            ( { model | now = audioTIme }, Cmd.none )
+
+        PlayKaeru ->
+            ( { model | kaeru = Just model.now }, Cmd.none )
+
+        StopKaeru ->
+            ( { model | kaeru = Nothing }, Cmd.none )
 
         Play ->
-            ( { model | playing = True }, Cmd.none )
+            ( { model | playing = Just model.now }, Cmd.none )
 
         Stop ->
-            ( { model | playing = False }, Cmd.none )
+            ( { model | playing = Nothing }, Cmd.none )
 
 
 
 ---- VIEW ----
 
 
-node : Int -> Float -> WebAudio.AudioNode
-node nodeNumber pos =
-    { id = WebAudio.AudioNodeId ("oscillator-" ++ String.fromInt nodeNumber ++ "-" ++ String.fromFloat pos)
-    , output = WebAudio.Output (WebAudio.AudioNodeId "gain")
-    , properties =
-        WebAudio.Oscillator
-            { frequency = WebAudio.Constant (440 * (2 ^ (toFloat nodeNumber / 12)))
-            , startTime = WebAudio.AudioTime pos
-            , stopTime = WebAudio.AudioTime (pos + 1)
-            }
-    }
-
-
-kaeru : WebAudio.AudioGraph
-kaeru =
-    [ { id = WebAudio.AudioNodeId "gain"
-      , output = WebAudio.output
-      , properties = WebAudio.Gain { gain = WebAudio.Constant 0.05 }
-      }
-    , node 0 1
-    , node 2 2
-    , node 4 3
-    , node 5 4
-    , node 4 5
-    , node 2 6
-    , node 0 7
-    ]
-
-
-graph : WebAudio.AudioGraph
-graph =
-    [ { id = WebAudio.AudioNodeId "buffersource"
-      , output = WebAudio.output
-      , properties =
-            WebAudio.BufferSource
-                { buffer = WebAudio.AudioBufferUrl "New_Place_of_Work.mp3"
-                , detune = 0
-                , startTime = WebAudio.AudioTime 1
-                , stopTime = Nothing
-                }
-      }
-    ]
-
-
 view : Model -> Html Msg
 view model =
     div []
         [ img [ src "/logo.svg" ] []
-        , h1 [] [ text "Your Elm App is working!" ]
-        , if model.playing then
-            button [ onClick Stop ] [ text "Stop Music" ]
+        , h1 [] [ text "elm-webaudio Example" ]
+        , h2 [] [ text "Oscillator Node" ]
+        , case model.kaeru of
+            Nothing ->
+                button [ onClick PlayKaeru ] [ text "Play Music" ]
 
-          else
-            button [ onClick Play ] [ text "Play Music" ]
+            Just _ ->
+                button [ onClick StopKaeru ] [ text "Stop Music" ]
+        , h2 [] [ text "BufferSource Node" ]
+        , case model.playing of
+            Nothing ->
+                button [ onClick Play ] [ text "Play Music" ]
+
+            Just _ ->
+                button [ onClick Stop ] [ text "Stop Music" ]
         , WebAudio.toHtml
             { graph =
                 List.concat
-                    [ kaeru
-                    , if model.playing then
-                        graph
+                    [ case model.kaeru of
+                        Nothing ->
+                            []
 
-                      else
-                        []
+                        Just start ->
+                            let
+                                node : Int -> Float -> WebAudio.AudioNodeProps
+                                node nodeNumber pos =
+                                    WebAudio.Oscillator
+                                        { frequency = WebAudio.Constant (440 * (2 ^ (toFloat nodeNumber / 12)))
+                                        , startTime = WebAudio.AudioTime (start + pos)
+                                        , stopTime = WebAudio.AudioTime (start + pos + 1)
+                                        }
+                            in
+                            WebAudio.parallel
+                                { id = WebAudio.AudioNodeId "gain"
+                                , output = WebAudio.output
+                                , properties = WebAudio.Gain { gain = WebAudio.Constant 0.05 }
+                                }
+                                [ node 0 0
+                                , node 2 1
+                                , node 4 2
+                                , node 5 3
+                                , node 4 4
+                                , node 2 5
+                                , node 0 6
+                                ]
+                    , case model.playing of
+                        Nothing ->
+                            []
+
+                        Just start ->
+                            WebAudio.serial "buffersource-test"
+                                WebAudio.output
+                                (WebAudio.Gain { gain = WebAudio.Constant 1 })
+                                [ WebAudio.BufferSource
+                                    { buffer = WebAudio.AudioBufferUrl "New_Place_of_Work.mp3"
+                                    , detune = 0
+                                    , startTime = WebAudio.AudioTime start
+                                    , stopTime = Nothing
+                                    }
+                                ]
                     ]
             , assets = []
             , onAssetLoaded = AssetLoaded

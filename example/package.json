@@ -1,19 +1,13 @@
 {
   "name": "example",
   "version": "1.0.0",
-  "description": "This project is bootstrapped with [Create Elm App](https://github.com/halfzebra/create-elm-app).",
+  "description": "Examples of elm-webaudio",
   "main": "index.js",
-  "directories": {
-    "test": "tests"
-  },
+  "directories": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "@babel/core": "^7.3.4",
-    "@babel/preset-env": "^7.3.4",
-    "@babel/runtime": "^7.3.4"
-  }
+  "dependencies": {}
 }

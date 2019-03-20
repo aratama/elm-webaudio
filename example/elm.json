@@ -19,9 +19,7 @@
         }
     },
     "test-dependencies": {
-        "direct": {
-            "elm-explorations/test": "1.0.0"
-        },
+        "direct": {},
         "indirect": {
             "elm/random": "1.0.0"
         }

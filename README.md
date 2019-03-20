@@ -1,6 +1,6 @@
 # elm-webaudio
 
-elm-webaudio provides methods to play audio in Elm.
+**elm-webaudio** provides methods to play audio in Elm.
 elm-webaudio interacts with out of port in the same manner as [elm-canvas](https://github.com/joakin/elm-canvas).
 It supports not only representing an audio graph with data types but also passing the graph to JS side through custom element and rendering actual audio graph.
 

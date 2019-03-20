@@ -39,6 +39,9 @@ customElements.define(
         }
 
         set graph(value) {
+            if (Object.keys(value).length !== 0) {
+                debugger
+            }
             this.audioGraphJson = value;
             this.virtualAudioGraph.update(this.jsonToVirtualWebAudioGraph(value));
         }
@@ -160,13 +163,12 @@ customElements.define(
             } else {
                 this.audioBufferMap.set(url, "loading");
                 fetch(url).then(response => {
-                    response.arrayBuffer().then(arrayBuffer => {
-                        this.virtualAudioGraph.audioContext.decodeAudioData(arrayBuffer).then(decoded => {
+                    return response.arrayBuffer().then(arrayBuffer => {
+                        return this.virtualAudioGraph.audioContext.decodeAudioData(arrayBuffer).then(decoded => {
                             this.audioBufferMap.set(url, decoded);
                             this.virtualAudioGraph.update(this.jsonToVirtualWebAudioGraph(this.audioGraphJson));
-
-                        })
-                    })
+                        });
+                    });
                 }).catch(err => {
                     console.error(url + err);
                 });

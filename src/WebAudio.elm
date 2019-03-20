@@ -15,6 +15,7 @@ module WebAudio exposing
     , output
     , dynamicsCompressor
     , dynamicsCompressorDefaults
+    , parallel, serial
     )
 
 {-| elm-webaudio provides methods to play audio in Elm.
@@ -571,3 +572,56 @@ encodeGraphEntry nodep =
 encode : AudioGraph -> Value
 encode graph =
     object <| List.map encodeGraphEntry graph
+
+
+
+-- utils
+
+
+serial : String -> AudioOutput -> AudioNodeProps -> List AudioNodeProps -> List AudioNode
+serial id out head rem =
+    let
+        go : String -> List AudioNodeProps -> List AudioNode
+        go previous remaining =
+            case remaining of
+                [] ->
+                    []
+
+                y :: [] ->
+                    [ { id = AudioNodeId (previous ++ "/0")
+                      , output = Output (AudioNodeId previous)
+                      , properties = y
+                      }
+                    ]
+
+                y :: ys ->
+                    let
+                        nid =
+                            previous ++ "/0"
+                    in
+                    { id = AudioNodeId nid
+                    , output = Output (AudioNodeId previous)
+                    , properties = y
+                    }
+                        :: go nid ys
+    in
+    { id = AudioNodeId id
+    , output = out
+    , properties = head
+    }
+        :: go id rem
+
+
+parallel : AudioNode -> List AudioNodeProps -> List AudioNode
+parallel parent children =
+    case parent.id of
+        AudioNodeId id ->
+            parent
+                :: List.indexedMap
+                    (\i child ->
+                        { id = AudioNodeId (id ++ "/" ++ String.fromInt i)
+                        , output = Output parent.id
+                        , properties = child
+                        }
+                    )
+                    children
