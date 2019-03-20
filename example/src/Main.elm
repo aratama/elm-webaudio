@@ -13,16 +13,18 @@ import WebAudio
 
 type alias Model =
     { now : Float
-    , kaeru : Maybe Float
-    , playing : Maybe Float
+    , ex1 : Maybe Float
+    , ex2 : Maybe Float
+    , ex3 : Maybe Float
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { now = 0
-      , kaeru = Nothing
-      , playing = Nothing
+      , ex1 = Nothing
+      , ex2 = Nothing
+      , ex3 = Nothing
       }
     , Cmd.none
     )
@@ -35,10 +37,12 @@ init =
 type Msg
     = AssetLoaded (List String)
     | Tick Float
-    | PlayKaeru
-    | StopKaeru
-    | Play
-    | Stop
+    | PlayEx1
+    | StopEx1
+    | PlayEx2
+    | StopEx2
+    | PlayEx3
+    | StopEx3
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -50,17 +54,23 @@ update msg model =
         Tick audioTIme ->
             ( { model | now = audioTIme }, Cmd.none )
 
-        PlayKaeru ->
-            ( { model | kaeru = Just model.now }, Cmd.none )
+        PlayEx1 ->
+            ( { model | ex1 = Just model.now }, Cmd.none )
 
-        StopKaeru ->
-            ( { model | kaeru = Nothing }, Cmd.none )
+        StopEx1 ->
+            ( { model | ex1 = Nothing }, Cmd.none )
 
-        Play ->
-            ( { model | playing = Just model.now }, Cmd.none )
+        PlayEx2 ->
+            ( { model | ex2 = Just model.now }, Cmd.none )
 
-        Stop ->
-            ( { model | playing = Nothing }, Cmd.none )
+        StopEx2 ->
+            ( { model | ex2 = Nothing }, Cmd.none )
+
+        PlayEx3 ->
+            ( { model | ex3 = Just model.now }, Cmd.none )
+
+        StopEx3 ->
+            ( { model | ex3 = Nothing }, Cmd.none )
 
 
 
@@ -72,24 +82,31 @@ view model =
     div []
         [ img [ src "/logo.svg" ] []
         , h1 [] [ text "elm-webaudio Example" ]
-        , h2 [] [ text "Oscillator Node" ]
-        , case model.kaeru of
+        , h2 [] [ text "Example 1: Oscillator Node" ]
+        , case model.ex1 of
             Nothing ->
-                button [ onClick PlayKaeru ] [ text "Play Music" ]
+                button [ onClick PlayEx1 ] [ text "Play" ]
 
             Just _ ->
-                button [ onClick StopKaeru ] [ text "Stop Music" ]
-        , h2 [] [ text "BufferSource Node" ]
-        , case model.playing of
+                button [ onClick StopEx1 ] [ text "Stop" ]
+        , h2 [] [ text "Example 2: BufferSource Node" ]
+        , case model.ex2 of
             Nothing ->
-                button [ onClick Play ] [ text "Play Music" ]
+                button [ onClick PlayEx2 ] [ text "Play" ]
 
             Just _ ->
-                button [ onClick Stop ] [ text "Stop Music" ]
+                button [ onClick StopEx2 ] [ text "Stop" ]
+        , h2 [] [ text "Example 3: Convolver Node" ]
+        , case model.ex3 of
+            Nothing ->
+                button [ onClick PlayEx3 ] [ text "Play" ]
+
+            Just _ ->
+                button [ onClick StopEx3 ] [ text "Stop" ]
         , WebAudio.toHtml
             { graph =
                 List.concat
-                    [ case model.kaeru of
+                    [ case model.ex1 of
                         Nothing ->
                             []
 
@@ -115,16 +132,60 @@ view model =
                                 , node 4 4
                                 , node 2 5
                                 , node 0 6
+
+                                --
+                                , node 4 8
+                                , node 5 9
+                                , node 7 10
+                                , node 9 11
+                                , node 7 12
+                                , node 5 13
+                                , node 4 14
+
+                                --
+                                , node 0 16
+                                , node 0 18
+                                , node 0 20
+                                , node 0 22
+
+                                --
+                                , node 0 24
+                                , node 0 24.5
+                                , node 2 25
+                                , node 2 25.5
+                                , node 4 26
+                                , node 4 26.5
+                                , node 5 27
+                                , node 5 27.5
+                                , node 4 28
+                                , node 2 29
+                                , node 0 30
                                 ]
-                    , case model.playing of
+                    , case model.ex2 of
                         Nothing ->
                             []
 
                         Just start ->
                             WebAudio.serial "buffersource-test"
                                 WebAudio.output
-                                (WebAudio.Gain { gain = WebAudio.Constant 1 })
-                                [ WebAudio.BufferSource
+                                [ WebAudio.Gain { gain = WebAudio.Constant 1 }
+                                , WebAudio.BufferSource
+                                    { buffer = WebAudio.AudioBufferUrl "New_Place_of_Work.mp3"
+                                    , detune = 0
+                                    , startTime = WebAudio.AudioTime start
+                                    , stopTime = Nothing
+                                    }
+                                ]
+                    , case model.ex3 of
+                        Nothing ->
+                            []
+
+                        Just start ->
+                            WebAudio.serial "ex3"
+                                WebAudio.output
+                                [ WebAudio.Convolver { buffer = WebAudio.AudioBufferUrl "s1_r1_b.mp3", normalize = False }
+                                , WebAudio.Gain { gain = WebAudio.Constant 1 }
+                                , WebAudio.BufferSource
                                     { buffer = WebAudio.AudioBufferUrl "New_Place_of_Work.mp3"
                                     , detune = 0
                                     , startTime = WebAudio.AudioTime start

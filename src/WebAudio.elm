@@ -578,38 +578,43 @@ encode graph =
 -- utils
 
 
-serial : String -> AudioOutput -> AudioNodeProps -> List AudioNodeProps -> List AudioNode
-serial id out head rem =
-    let
-        go : String -> List AudioNodeProps -> List AudioNode
-        go previous remaining =
-            case remaining of
-                [] ->
-                    []
+serial : String -> AudioOutput -> List AudioNodeProps -> List AudioNode
+serial id out nodes =
+    case nodes of
+        [] ->
+            []
 
-                y :: [] ->
-                    [ { id = AudioNodeId (previous ++ "/0")
-                      , output = Output (AudioNodeId previous)
-                      , properties = y
-                      }
-                    ]
+        head :: rem ->
+            let
+                go : String -> List AudioNodeProps -> List AudioNode
+                go previous remaining =
+                    case remaining of
+                        [] ->
+                            []
 
-                y :: ys ->
-                    let
-                        nid =
-                            previous ++ "/0"
-                    in
-                    { id = AudioNodeId nid
-                    , output = Output (AudioNodeId previous)
-                    , properties = y
-                    }
-                        :: go nid ys
-    in
-    { id = AudioNodeId id
-    , output = out
-    , properties = head
-    }
-        :: go id rem
+                        y :: [] ->
+                            [ { id = AudioNodeId (previous ++ "/0")
+                              , output = Output (AudioNodeId previous)
+                              , properties = y
+                              }
+                            ]
+
+                        y :: ys ->
+                            let
+                                nid =
+                                    previous ++ "/0"
+                            in
+                            { id = AudioNodeId nid
+                            , output = Output (AudioNodeId previous)
+                            , properties = y
+                            }
+                                :: go nid ys
+            in
+            { id = AudioNodeId id
+            , output = out
+            , properties = head
+            }
+                :: go id rem
 
 
 parallel : AudioNode -> List AudioNodeProps -> List AudioNode

@@ -16,14 +16,28 @@ body {
 
   margin-left: auto;
   margin-right: auto;
-  width: 900px;
+  width: 600px;
 }
 
 h1 {
   font-size: 30px;
+  font-weight: bold;
+}
+
+h2 {
+  font-weight: normal;
 }
 
 img {
   margin: 20px 0;
   max-width: 200px;
+  opacity: 0.1;
+  position: absolute;
+  pointer-events: none;
+  z-index: -100;
+}
+
+button {
+  min-width: 240px;
+  padding: 4px;
 }

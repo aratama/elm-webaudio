@@ -1,4 +1,4 @@
-# elm-webaudio
+# [WIP] elm-webaudio
 
 **elm-webaudio** provides methods to play audio in Elm.
 elm-webaudio interacts with out of port in the same manner as [elm-canvas](https://github.com/joakin/elm-canvas).
@@ -11,7 +11,10 @@ It supports not only representing an audio graph with data types but also passin
     render =
         WebAudio.toHtml 
             { graph = 
-                [ Oscillator { id = "osci", frequency = 440, output = [ WebAudio.output ] } ] }
+                [ { id = WebAudio.AudioNodeId "osci"
+                  , output = WebAudio.output
+                  , properties = Oscillator { frequency = 440 } 
+                  } ] }
 ```
 
 ## Tick
