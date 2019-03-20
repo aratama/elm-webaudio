@@ -38,7 +38,7 @@ elm-webaudio fetch the resource and re-render the audio graph after completing l
 * You can get current audio time via `onTick` property. 
 * All audio nodes must have their identifiers. `serial` utility function gives their ids automatically and connect them serially. So only one node needs its id in the example. 
 
-See the example for more information.
+See [the example](example) for more information.
 
 
 ## See Also
