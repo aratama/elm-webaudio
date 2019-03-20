@@ -1,10 +1,11 @@
 # elm-webaudio
 
 **elm-webaudio** provides methods to play audio in Elm via [Web Audio API](https://developer.mozilla.org/docs/Web/API/Web_Audio_API).
-It supports not only representing an audio graph with Elm's data types but also passing the graph to JS side through a custom element and rendering actual an audio graph. 
-elm-webaudio uses [benji6/virtual-audio-graph](https://github.com/benji6/virtual-audio-graph/) internally.
+It supports not only representing an audio graph with Elm's data types but also rendering actual an audio graph and playing audio. 
+elm-webaudio uses [benji6/virtual-audio-graph](https://github.com/benji6/virtual-audio-graph/) internally. elm-webaudio intend to support full-featured Web Audio API, 
+however it lacks some features right now.
 
-elm-webaudio interacts with JavaScript in the same manner as [elm-canvas](https://github.com/joakin/elm-canvas). 
+elm-webaudio interacts with JavaScript in the same manner as [elm-canvas](https://github.com/joakin/elm-canvas): passing the graph to JS side through a custom element. 
 Therefore, you also need to install the JavaScript module with `npm i aratama/elm-webaudio` and import it with `import "elm-webaudio";`.
 
 
@@ -14,13 +15,13 @@ Therefore, you also need to install the JavaScript module with `npm i aratama/el
 ```elm  
 view : Model -> Html Msg
 view model = WebAudio.toHtml
-    { graph = WebAudio.serial (WebAudio.NodeId "buffersource-test")
+    { graph = WebAudio.serial (WebAudio.NodeId "basic-example")
         WebAudio.output
         [ WebAudio.Gain { gain = WebAudio.Constant 1 }
         , WebAudio.BufferSource
             { buffer = WebAudio.Url "New_Place_of_Work.mp3"
             , detune = 0
-            , startTime = WebAudio.Time start
+            , startTime = WebAudio.Time 0
             , stopTime = Nothing
             }
         ]
@@ -35,6 +36,7 @@ view model = WebAudio.toHtml
 elm-webaudio fetch the resource and re-render the audio graph after completing load automatically. 
 * You can preload audio resources by listing up urls in the `asset` property.
 * You can get current audio time via `onTick` property. 
+* All audio nodes must have their identifiers. `serial` utility function give their ids and connect them automatically. 
 
 See the example for more information.
 
