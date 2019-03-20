@@ -112,19 +112,17 @@ view model =
 
                         Just start ->
                             let
-                                node : Int -> Float -> WebAudio.AudioNodeProps
+                                node : Int -> Float -> WebAudio.Props
                                 node nodeNumber pos =
                                     WebAudio.Oscillator
                                         { frequency = WebAudio.Constant (440 * (2 ^ (toFloat nodeNumber / 12)))
-                                        , startTime = WebAudio.AudioTime (start + pos)
-                                        , stopTime = WebAudio.AudioTime (start + pos + 1)
+                                        , startTime = WebAudio.Time (start + pos)
+                                        , stopTime = WebAudio.Time (start + pos + 1)
                                         }
                             in
-                            WebAudio.parallel
-                                { id = WebAudio.AudioNodeId "gain"
-                                , output = WebAudio.output
-                                , properties = WebAudio.Gain { gain = WebAudio.Constant 0.05 }
-                                }
+                            WebAudio.parallel (WebAudio.NodeId "gain")
+                                WebAudio.output
+                                (WebAudio.Gain { gain = WebAudio.Constant 0.05 })
                                 [ node 0 0
                                 , node 2 1
                                 , node 4 2
@@ -166,13 +164,13 @@ view model =
                             []
 
                         Just start ->
-                            WebAudio.serial "buffersource-test"
+                            WebAudio.serial (WebAudio.NodeId "buffersource-test")
                                 WebAudio.output
                                 [ WebAudio.Gain { gain = WebAudio.Constant 1 }
                                 , WebAudio.BufferSource
-                                    { buffer = WebAudio.AudioBufferUrl "New_Place_of_Work.mp3"
+                                    { buffer = WebAudio.Url "New_Place_of_Work.mp3"
                                     , detune = 0
-                                    , startTime = WebAudio.AudioTime start
+                                    , startTime = WebAudio.Time start
                                     , stopTime = Nothing
                                     }
                                 ]
@@ -181,20 +179,20 @@ view model =
                             []
 
                         Just start ->
-                            WebAudio.serial "ex3"
+                            WebAudio.serial (WebAudio.NodeId "ex3")
                                 WebAudio.output
-                                [ WebAudio.Convolver { buffer = WebAudio.AudioBufferUrl "s1_r1_b.mp3", normalize = False }
+                                [ WebAudio.Convolver { buffer = WebAudio.Url "s1_r1_b.mp3", normalize = False }
                                 , WebAudio.Gain { gain = WebAudio.Constant 1 }
                                 , WebAudio.BufferSource
-                                    { buffer = WebAudio.AudioBufferUrl "New_Place_of_Work.mp3"
+                                    { buffer = WebAudio.Url "New_Place_of_Work.mp3"
                                     , detune = 0
-                                    , startTime = WebAudio.AudioTime start
+                                    , startTime = WebAudio.Time start
                                     , stopTime = Nothing
                                     }
                                 ]
                     ]
             , assets = []
-            , onAssetLoaded = AssetLoaded
+            , onProgress = AssetLoaded
             , onTick = Tick
             }
         ]

@@ -1,49 +1,53 @@
 module WebAudio exposing
-    ( AudioBufferUrl(..)
-    , AudioGraph
-    , AudioNode
-    , AudioNodeId(..)
-    , AudioNodeProps(..)
-    , AudioOutput(..)
-    , AudioParam(..)
-    , AudioParamMethod(..)
-    , AudioTime(..)
-    , DynamicsCompressorProps
+    ( Url(..)
+    , Time(..)
     , Float32Array
+    , Graph
+    , Node
+    , Props(..)
+    , NodeId(..)
+    , Output(..)
+    , Param(..)
+    , ParamMethod(..)
+    , DynamicsCompressorProps
     , Oversample(..)
     , toHtml
     , output
     , dynamicsCompressor
     , dynamicsCompressorDefaults
-    , parallel, serial
+    , parallel
+    , serial
     )
 
 {-| elm-webaudio provides methods to play audio in Elm.
 
 
-# Types
+# Basic Types
 
-@docs AudioBufferUrl
+@docs Url
 
-@docs AudioGraph
-
-@docs AudioNode
-
-@docs AudioNodeId
-
-@docs AudioNodeProps
-
-@docs AudioOutput
-
-@docs AudioParam
-
-@docs AudioParamMethod
-
-@docs AudioTime
-
-@docs DynamicsCompressorProps
+@docs Time
 
 @docs Float32Array
+
+
+# Audio Graph
+
+@docs Graph
+
+@docs Node
+
+@docs Props
+
+@docs NodeId
+
+@docs Output
+
+@docs Param
+
+@docs ParamMethod
+
+@docs DynamicsCompressorProps
 
 @docs Oversample
 
@@ -61,6 +65,10 @@ module WebAudio exposing
 
 @docs dynamicsCompressorDefaults
 
+@docs parallel
+
+@docs serial
+
 -}
 
 import Html
@@ -73,16 +81,16 @@ import List
 
 {-| Unique identifier of audio nodes in the audio graph.
 -}
-type AudioNodeId
-    = AudioNodeId String
+type NodeId
+    = NodeId String
 
 
 {-| Audio output.
 -}
-type AudioOutput
-    = Output AudioNodeId
-    | Outputs (List AudioNodeId)
-    | KeyWithDestination { key : AudioNodeId, destination : Destination }
+type Output
+    = Output NodeId
+    | Outputs (List NodeId)
+    | KeyWithDestination { key : NodeId, destination : Destination }
 
 
 {-| Propertiy name as a audio output destination.
@@ -98,14 +106,14 @@ type Destination
 {-| URL for an audio buffer. Elm can't deal AudioBuffer objects directly
 and Just a string as URL instead of AudioBuffer object.
 -}
-type AudioBufferUrl
-    = AudioBufferUrl String
+type Url
+    = Url String
 
 
 {-| Float value representing audio time.
 -}
-type AudioTime
-    = AudioTime Float
+type Time
+    = Time Float
 
 
 {-| Identifier for MediaElement.
@@ -116,18 +124,18 @@ type MediaElementId
 
 {-| AudioParam.
 -}
-type AudioParam
+type Param
     = Constant Float
-    | Methods (List AudioParamMethod)
+    | Methods (List ParamMethod)
 
 
 {-| -}
-type AudioParamMethod
-    = SetValueAtTime Float AudioTime
-    | LinearRampToValueAtTime Float AudioTime
-    | ExponentialRampToValueAtTime Float AudioTime
-    | SetTargetAtTime Float AudioTime Float
-    | SetValueCurveAtTime (List Float) AudioTime Float
+type ParamMethod
+    = SetValueAtTime Float Time
+    | LinearRampToValueAtTime Float Time
+    | ExponentialRampToValueAtTime Float Time
+    | SetTargetAtTime Float Time Float
+    | SetValueCurveAtTime (List Float) Time Float
 
 
 {-| An enumerated value for `type` property of `BiquadFilter`.
@@ -169,7 +177,7 @@ type Oversample
 
 
 {-| -}
-type AudioNodeProps
+type Props
     = Analyser
         { fftSize : Int
         , minDecibels : Float
@@ -177,58 +185,58 @@ type AudioNodeProps
         , smoothingTimeConstant : Float
         }
     | BufferSource
-        { buffer : AudioBufferUrl
-        , startTime : AudioTime
-        , stopTime : Maybe AudioTime
+        { buffer : Url
+        , startTime : Time
+        , stopTime : Maybe Time
         , detune : Int
         }
     | BiquadFilter
         { type_ : BiquadFilterType
-        , frequency : AudioParam
-        , detune : AudioParam
-        , q : AudioParam
+        , frequency : Param
+        , detune : Param
+        , q : Param
         }
     | ChannelMerger
     | ChannelSplitter
     | Convolver
-        { buffer : AudioBufferUrl
+        { buffer : Url
         , normalize : Bool
         }
     | Delay
-        { delayTime : AudioParam
-        , maxDelayTime : AudioParam
+        { delayTime : Param
+        , maxDelayTime : Param
         }
     | DynamicsCompressor DynamicsCompressorProps
     | Gain
-        { gain : AudioParam
+        { gain : Param
         }
     | MediaElementSource
         { mediaElement : MediaElementId
         }
     | MediaStreamDestination
     | Oscillator
-        { frequency : AudioParam
-        , startTime : AudioTime
-        , stopTime : AudioTime
+        { frequency : Param
+        , startTime : Time
+        , stopTime : Time
         }
     | Panner
         { coneInnerAngle : Float
         , coneOuterAngle : Float
         , coneOuterGain : Float
         , distanceModel : DistanceModel
-        , orientationX : AudioParam
-        , orientationY : AudioParam
-        , orientationZ : AudioParam
+        , orientationX : Param
+        , orientationY : Param
+        , orientationZ : Param
         , panningModel : PanningModel
-        , positionX : AudioParam
-        , positionY : AudioParam
-        , positionZ : AudioParam
+        , positionX : Param
+        , positionY : Param
+        , positionZ : Param
         , maxDistance : Float
         , refDistance : Float
         , rolloffFactor : Float
         }
     | StereoPanner
-        { pan : AudioParam
+        { pan : Param
         }
     | WaveShaper
         { curve : Float32Array
@@ -238,27 +246,27 @@ type AudioNodeProps
 
 {-| Audio node.
 -}
-type alias AudioNode =
-    { id : AudioNodeId
-    , output : AudioOutput
-    , properties : AudioNodeProps
+type alias Node =
+    { id : NodeId
+    , output : Output
+    , props : Props
     }
 
 
 {-| Audio graph.
 -}
-type alias AudioGraph =
-    List AudioNode
+type alias Graph =
+    List Node
 
 
 {-| Data type for DynamicsCompresor.
 -}
 type alias DynamicsCompressorProps =
-    { attack : AudioParam
-    , knee : AudioParam
-    , ratio : AudioParam
-    , release : AudioParam
-    , threshold : AudioParam
+    { attack : Param
+    , knee : Param
+    , ratio : Param
+    , release : Param
+    , threshold : Param
     }
 
 
@@ -275,33 +283,33 @@ dynamicsCompressorDefaults =
 
 {-| Utility constructor for a DynaicCompressor.
 -}
-dynamicsCompressor : (DynamicsCompressorProps -> DynamicsCompressorProps) -> AudioNodeProps
+dynamicsCompressor : (DynamicsCompressorProps -> DynamicsCompressorProps) -> Props
 dynamicsCompressor f =
     DynamicsCompressor (f dynamicsCompressorDefaults)
 
 
 {-| Special identifier representing final destination.
 -}
-output : AudioOutput
+output : Output
 output =
-    Output (AudioNodeId "output")
+    Output (NodeId "output")
 
 
 {-| Render an audio graph as HTML.
 -}
 toHtml :
-    { graph : AudioGraph
+    { graph : Graph
     , assets : List String
     , onTick : Float -> msg
-    , onAssetLoaded : List String -> msg
+    , onProgress : List String -> msg
     }
     -> Html.Html msg
-toHtml { graph, assets, onTick, onAssetLoaded } =
+toHtml { graph, assets, onTick, onProgress } =
     Html.node "elm-webaudio"
         [ Html.Attributes.property "graph" (encode graph)
         , Html.Attributes.property "assets" (Json.Encode.list Json.Encode.string assets)
         , Html.Events.on "tick" <| Json.Decode.map onTick (Json.Decode.at [ "detail" ] Json.Decode.float)
-        , Html.Events.on "assetLoaded" <| Json.Decode.map onAssetLoaded (Json.Decode.at [ "detail" ] (Json.Decode.list Json.Decode.string))
+        , Html.Events.on "assetLoaded" <| Json.Decode.map onProgress (Json.Decode.at [ "detail" ] (Json.Decode.list Json.Decode.string))
         ]
         []
 
@@ -310,26 +318,26 @@ toHtml { graph, assets, onTick, onAssetLoaded } =
 -- encoding
 
 
-encodeAudioParamMethod : AudioParamMethod -> Value
+encodeAudioParamMethod : ParamMethod -> Value
 encodeAudioParamMethod method =
     case method of
-        SetValueAtTime value (AudioTime startTime) ->
+        SetValueAtTime value (Time startTime) ->
             list identity [ string "setValueAtTime", float value, float startTime ]
 
-        LinearRampToValueAtTime value (AudioTime endTime) ->
+        LinearRampToValueAtTime value (Time endTime) ->
             list identity [ string "linearRampToValueAtTime", float value, float endTime ]
 
-        ExponentialRampToValueAtTime value (AudioTime endTime) ->
+        ExponentialRampToValueAtTime value (Time endTime) ->
             list identity [ string "exponentialRampToValueAtTime", float value, float endTime ]
 
-        SetTargetAtTime target (AudioTime startTime) timeConstant ->
+        SetTargetAtTime target (Time startTime) timeConstant ->
             list identity [ string "setTargetAtTime", float target, float startTime, float timeConstant ]
 
-        SetValueCurveAtTime values (AudioTime startTime) duration ->
+        SetValueCurveAtTime values (Time startTime) duration ->
             list identity [ string "setValueCurveAtTime", list float values, float startTime, float duration ]
 
 
-encodeAudioParam : AudioParam -> Value
+encodeAudioParam : Param -> Value
 encodeAudioParam param =
     case param of
         Constant value ->
@@ -339,15 +347,15 @@ encodeAudioParam param =
             list encodeAudioParamMethod methods
 
 
-nodeId : AudioNodeId -> Value
-nodeId (AudioNodeId id) =
+nodeId : NodeId -> Value
+nodeId (NodeId id) =
     string id
 
 
-encodeOutput : AudioOutput -> Value
+encodeOutput : Output -> Value
 encodeOutput out =
     case out of
-        Output (AudioNodeId id) ->
+        Output (NodeId id) ->
             string id
 
         KeyWithDestination { key, destination } ->
@@ -376,13 +384,13 @@ destinationToString dest =
             "pan"
 
 
-bufferUrl : AudioBufferUrl -> Value
-bufferUrl (AudioBufferUrl url) =
+bufferUrl : Url -> Value
+bufferUrl (Url url) =
     string url
 
 
-audioTime : AudioTime -> Value
-audioTime (AudioTime time) =
+audioTime : Time -> Value
+audioTime (Time time) =
     float time
 
 
@@ -440,12 +448,12 @@ encodeBiquadFilterType value =
                 "allpass"
 
 
-encodeGraphEntry : AudioNode -> ( String, Value )
+encodeGraphEntry : Node -> ( String, Value )
 encodeGraphEntry nodep =
     ( case nodep.id of
-        AudioNodeId id ->
+        NodeId id ->
             id
-    , case nodep.properties of
+    , case nodep.props of
         Analyser node ->
             object
                 [ ( "node", string "Analyser" )
@@ -569,7 +577,7 @@ encodeGraphEntry nodep =
     )
 
 
-encode : AudioGraph -> Value
+encode : Graph -> Value
 encode graph =
     object <| List.map encodeGraphEntry graph
 
@@ -578,55 +586,62 @@ encode graph =
 -- utils
 
 
-serial : String -> AudioOutput -> List AudioNodeProps -> List AudioNode
+{-| -}
+serial : NodeId -> Output -> List Props -> List Node
 serial id out nodes =
-    case nodes of
-        [] ->
-            []
+    case id of
+        NodeId idStr ->
+            case nodes of
+                [] ->
+                    []
 
-        head :: rem ->
-            let
-                go : String -> List AudioNodeProps -> List AudioNode
-                go previous remaining =
-                    case remaining of
-                        [] ->
-                            []
+                head :: rem ->
+                    let
+                        go : String -> List Props -> List Node
+                        go previous remaining =
+                            case remaining of
+                                [] ->
+                                    []
 
-                        y :: [] ->
-                            [ { id = AudioNodeId (previous ++ "/0")
-                              , output = Output (AudioNodeId previous)
-                              , properties = y
-                              }
-                            ]
+                                y :: [] ->
+                                    [ { id = NodeId (previous ++ "/0")
+                                      , output = Output (NodeId previous)
+                                      , props = y
+                                      }
+                                    ]
 
-                        y :: ys ->
-                            let
-                                nid =
-                                    previous ++ "/0"
-                            in
-                            { id = AudioNodeId nid
-                            , output = Output (AudioNodeId previous)
-                            , properties = y
-                            }
-                                :: go nid ys
-            in
-            { id = AudioNodeId id
+                                y :: ys ->
+                                    let
+                                        nid =
+                                            previous ++ "/0"
+                                    in
+                                    { id = NodeId nid
+                                    , output = Output (NodeId previous)
+                                    , props = y
+                                    }
+                                        :: go nid ys
+                    in
+                    { id = id
+                    , output = out
+                    , props = head
+                    }
+                        :: go idStr rem
+
+
+{-| -}
+parallel : NodeId -> Output -> Props -> List Props -> List Node
+parallel id out parent children =
+    case id of
+        NodeId idStr ->
+            { id = id
             , output = out
-            , properties = head
+            , props = parent
             }
-                :: go id rem
-
-
-parallel : AudioNode -> List AudioNodeProps -> List AudioNode
-parallel parent children =
-    case parent.id of
-        AudioNodeId id ->
-            parent
                 :: List.indexedMap
                     (\i child ->
-                        { id = AudioNodeId (id ++ "/" ++ String.fromInt i)
-                        , output = Output parent.id
-                        , properties = child
+                        { id = NodeId (idStr ++ "/" ++ String.fromInt i)
+                        , output = Output id
+                        , props = child
                         }
                     )
                     children
