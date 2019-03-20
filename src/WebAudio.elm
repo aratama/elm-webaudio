@@ -8,7 +8,7 @@ module WebAudio exposing
     , NodeId(..)
     , Output(..)
     , Param(..)
-    , ParamMethod(..)
+    , Method(..)
     , DynamicsCompressorProps
     , Oversample(..)
     , toHtml
@@ -45,7 +45,7 @@ module WebAudio exposing
 
 @docs Param
 
-@docs ParamMethod
+@docs Method
 
 @docs DynamicsCompressorProps
 
@@ -126,11 +126,11 @@ type MediaElementId
 -}
 type Param
     = Constant Float
-    | Methods (List ParamMethod)
+    | Methods (List Method)
 
 
 {-| -}
-type ParamMethod
+type Method
     = SetValueAtTime Float Time
     | LinearRampToValueAtTime Float Time
     | ExponentialRampToValueAtTime Float Time
@@ -318,7 +318,7 @@ toHtml { graph, assets, onTick, onProgress } =
 -- encoding
 
 
-encodeAudioParamMethod : ParamMethod -> Value
+encodeAudioParamMethod : Method -> Value
 encodeAudioParamMethod method =
     case method of
         SetValueAtTime value (Time startTime) ->
