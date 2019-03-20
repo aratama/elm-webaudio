@@ -36,7 +36,7 @@ view model = WebAudio.toHtml
 elm-webaudio fetch the resource and re-render the audio graph after completing load automatically. 
 * You can preload audio resources by listing up urls in the `asset` property.
 * You can get current audio time via `onTick` property. 
-* All audio nodes must have their identifiers. `serial` utility function give their ids and connect them automatically. 
+* All audio nodes must have their identifiers. `serial` utility function gives their ids automatically and connect them serially. So only one node needs its id in the example. 
 
 See the example for more information.
 
