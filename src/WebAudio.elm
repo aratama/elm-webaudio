@@ -95,8 +95,11 @@ type NodeId
 -}
 type Output
     = Output NodeId
-    | Outputs (List NodeId)
     | OutputToProp { key : NodeId, destination : Destination }
+
+
+type alias Outputs =
+    List Output
 
 
 {-| Propertiy name as a audio output destination.
@@ -268,7 +271,7 @@ type Props
 -}
 type alias Node =
     { id : NodeId
-    , output : Output
+    , output : Outputs
     , props : Props
     }
 
@@ -310,9 +313,9 @@ dynamicsCompressor f =
 
 {-| Special identifier representing final destination. This is just a `Output (NodeId "output")`.
 -}
-output : Output
+output : Outputs
 output =
-    Output (NodeId "output")
+    [ Output (NodeId "output") ]
 
 
 {-| Render an audio graph as HTML.
@@ -409,9 +412,6 @@ encodeOutput out =
         OutputToProp { key, destination } ->
             object [ ( "key", nodeId key ), ( "destination", string (destinationToString destination) ) ]
 
-        Outputs os ->
-            list nodeId os
-
 
 destinationToString : Destination -> String
 destinationToString dest =
@@ -496,6 +496,19 @@ encodeBiquadFilterType value =
                 "allpass"
 
 
+encodeOutputs : Outputs -> Value
+encodeOutputs outputs =
+    case outputs of
+        [] ->
+            null
+
+        o :: [] ->
+            encodeOutput o
+
+        _ ->
+            list encodeOutput outputs
+
+
 encodeGraphEntry : Node -> ( String, Value )
 encodeGraphEntry nodep =
     ( case nodep.id of
@@ -505,7 +518,7 @@ encodeGraphEntry nodep =
         Analyser node ->
             object
                 [ ( "node", string "Analyser" )
-                , ( "output", encodeOutput nodep.output )
+                , ( "output", encodeOutputs nodep.output )
                 , ( "fftSize", int node.fftSize )
                 , ( "minDecibels", float node.minDecibels )
                 , ( "maxDecibels", float node.maxDecibels )
@@ -515,7 +528,7 @@ encodeGraphEntry nodep =
         BufferSource node ->
             object
                 [ ( "node", string "BufferSource" )
-                , ( "output", encodeOutput nodep.output )
+                , ( "output", encodeOutputs nodep.output )
                 , ( "buffer", bufferUrl node.buffer )
                 , ( "startTime", audioTime node.startTime )
                 , ( "stopTime", Maybe.withDefault null <| Maybe.map audioTime node.stopTime )
@@ -547,7 +560,7 @@ encodeGraphEntry nodep =
         Convolver node ->
             object
                 [ ( "node", string "Convolver" )
-                , ( "output", encodeOutput nodep.output )
+                , ( "output", encodeOutputs nodep.output )
                 , ( "buffer", bufferUrl node.buffer )
                 , ( "normalize", bool node.normalize )
                 ]
@@ -555,13 +568,13 @@ encodeGraphEntry nodep =
         DynamicsCompressor node ->
             object
                 [ ( "node", string "DynamicsCompressor" )
-                , ( "output", encodeOutput nodep.output )
+                , ( "output", encodeOutputs nodep.output )
                 ]
 
         Gain node ->
             object
                 [ ( "node", string "Gain" )
-                , ( "output", encodeOutput nodep.output )
+                , ( "output", encodeOutputs nodep.output )
                 , ( "gain", encodeAudioParam node.gain )
                 ]
 
@@ -574,7 +587,7 @@ encodeGraphEntry nodep =
         Oscillator node ->
             object
                 [ ( "node", string "Oscillator" )
-                , ( "output", encodeOutput nodep.output )
+                , ( "output", encodeOutputs nodep.output )
                 , ( "type", encodeOscillatorType node.type_ )
                 , ( "frequency", encodeAudioParam node.frequency )
                 , ( "startTime", audioTime node.startTime )
@@ -650,7 +663,7 @@ is converted into a audio grapha as:
 ```
 
 -}
-serial : NodeId -> Output -> List Props -> List Node
+serial : NodeId -> Outputs -> List Props -> List Node
 serial id out nodes =
     case id of
         NodeId idStr ->
@@ -668,7 +681,7 @@ serial id out nodes =
 
                                 y :: [] ->
                                     [ { id = NodeId (previous ++ "/0")
-                                      , output = Output (NodeId previous)
+                                      , output = [ Output (NodeId previous) ]
                                       , props = y
                                       }
                                     ]
@@ -679,7 +692,7 @@ serial id out nodes =
                                             previous ++ "/0"
                                     in
                                     { id = NodeId nid
-                                    , output = Output (NodeId previous)
+                                    , output = [ Output (NodeId previous) ]
                                     , props = y
                                     }
                                         :: go nid ys
@@ -706,7 +719,7 @@ is converted into a audio graph as:WW
 ```
 
 -}
-parallel : NodeId -> Output -> Props -> List Props -> List Node
+parallel : NodeId -> Outputs -> Props -> List Props -> List Node
 parallel id out parent children =
     case id of
         NodeId idStr ->
@@ -717,7 +730,7 @@ parallel id out parent children =
                 :: List.indexedMap
                     (\i child ->
                         { id = NodeId (idStr ++ "/" ++ String.fromInt i)
-                        , output = Output id
+                        , output = [ Output id ]
                         , props = child
                         }
                     )

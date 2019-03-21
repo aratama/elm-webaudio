@@ -230,7 +230,7 @@ view model =
                               , props = WebAudio.Gain { gain = WebAudio.Constant 0.2 }
                               }
                             , { id = WebAudio.NodeId "1"
-                              , output = WebAudio.Output (WebAudio.NodeId "0")
+                              , output = [ WebAudio.Output (WebAudio.NodeId "0") ]
                               , props =
                                     WebAudio.Oscillator
                                         { type_ = WebAudio.Sine
@@ -240,11 +240,11 @@ view model =
                                         }
                               }
                             , { id = WebAudio.NodeId "2"
-                              , output = WebAudio.OutputToProp { key = WebAudio.NodeId "1", destination = WebAudio.FrequencyProp }
+                              , output = [ WebAudio.OutputToProp { key = WebAudio.NodeId "1", destination = WebAudio.FrequencyProp } ]
                               , props = WebAudio.Gain { gain = WebAudio.Constant 350 }
                               }
                             , { id = WebAudio.NodeId "3"
-                              , output = WebAudio.Outputs [ WebAudio.NodeId "0", WebAudio.NodeId "output" ]
+                              , output = [ WebAudio.Output (WebAudio.NodeId "0"), WebAudio.Output (WebAudio.NodeId "output") ]
                               , props =
                                     WebAudio.Oscillator
                                         { type_ = WebAudio.Sine
