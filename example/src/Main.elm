@@ -16,6 +16,7 @@ type alias Model =
     , ex1 : Maybe Float
     , ex2 : Maybe Float
     , ex3 : Maybe Float
+    , ex4 : Maybe Float
     }
 
 
@@ -25,6 +26,7 @@ init =
       , ex1 = Nothing
       , ex2 = Nothing
       , ex3 = Nothing
+      , ex4 = Nothing
       }
     , Cmd.none
     )
@@ -43,6 +45,8 @@ type Msg
     | StopEx2
     | PlayEx3
     | StopEx3
+    | PlayEx4
+    | StopEx4
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -71,6 +75,12 @@ update msg model =
 
         StopEx3 ->
             ( { model | ex3 = Nothing }, Cmd.none )
+
+        PlayEx4 ->
+            ( { model | ex4 = Just model.now }, Cmd.none )
+
+        StopEx4 ->
+            ( { model | ex4 = Nothing }, Cmd.none )
 
 
 
@@ -103,6 +113,13 @@ view model =
 
             Just _ ->
                 button [ onClick StopEx3 ] [ text "Stop" ]
+        , h2 [] [ text "Example 4: Gain Node With Dynamic Frequency" ]
+        , case model.ex4 of
+            Nothing ->
+                button [ onClick PlayEx4 ] [ text "Play" ]
+
+            Just _ ->
+                button [ onClick StopEx4 ] [ text "Stop" ]
         , WebAudio.toHtml
             { graph =
                 List.concat
@@ -190,6 +207,38 @@ view model =
                                     , stopTime = Nothing
                                     }
                                 ]
+                    , case model.ex4 of
+                        Nothing ->
+                            []
+
+                        Just start ->
+                            [ { id = WebAudio.NodeId "0"
+                              , output = WebAudio.output
+                              , props = WebAudio.Gain { gain = WebAudio.Constant 0.2 }
+                              }
+                            , { id = WebAudio.NodeId "1"
+                              , output = WebAudio.Output (WebAudio.NodeId "0")
+                              , props =
+                                    WebAudio.Oscillator
+                                        { frequency = WebAudio.Constant 440
+                                        , startTime = WebAudio.Time start
+                                        , stopTime = WebAudio.Time (start + 3)
+                                        }
+                              }
+                            , { id = WebAudio.NodeId "2"
+                              , output = WebAudio.OutputToProp { key = WebAudio.NodeId "1", destination = WebAudio.FrequencyProp }
+                              , props = WebAudio.Gain { gain = WebAudio.Constant 350 }
+                              }
+                            , { id = WebAudio.NodeId "3"
+                              , output = WebAudio.Outputs [ WebAudio.NodeId "0", WebAudio.NodeId "output" ]
+                              , props =
+                                    WebAudio.Oscillator
+                                        { frequency = WebAudio.Constant 1
+                                        , startTime = WebAudio.Time start
+                                        , stopTime = WebAudio.Time (start + 3)
+                                        }
+                              }
+                            ]
                     ]
             , assets = []
             , onProgress = AssetLoaded

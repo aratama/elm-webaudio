@@ -17,6 +17,7 @@ module WebAudio exposing
     , dynamicsCompressorDefaults
     , parallel
     , serial
+    , Destination(..)
     )
 
 {-| elm-webaudio provides methods to play audio in Elm.
@@ -57,7 +58,7 @@ module WebAudio exposing
 @docs toHtml
 
 
-# Utility
+# Utilities
 
 @docs output
 
@@ -90,7 +91,7 @@ type NodeId
 type Output
     = Output NodeId
     | Outputs (List NodeId)
-    | KeyWithDestination { key : NodeId, destination : Destination }
+    | OutputToProp { key : NodeId, destination : Destination }
 
 
 {-| Propertiy name as a audio output destination.
@@ -103,8 +104,11 @@ type Destination
     | PanProp
 
 
-{-| URL for an audio buffer. Elm can't deal AudioBuffer objects directly
-and Just a string as URL instead of AudioBuffer object.
+{-| URL for an audio buffer.
+
+Elm can't deal `AudioBuffer` objects directly
+and use URL instead of `AudioBuffer`.
+
 -}
 type Url
     = Url String
@@ -129,7 +133,8 @@ type Param
     | Methods (List Method)
 
 
-{-| -}
+{-| Methods for AudioParam.
+-}
 type Method
     = SetValueAtTime Float Time
     | LinearRampToValueAtTime Float Time
@@ -288,7 +293,7 @@ dynamicsCompressor f =
     DynamicsCompressor (f dynamicsCompressorDefaults)
 
 
-{-| Special identifier representing final destination.
+{-| Special identifier representing final destination. This is just a `Output (NodeId "output")`.
 -}
 output : Output
 output =
@@ -296,6 +301,9 @@ output =
 
 
 {-| Render an audio graph as HTML.
+
+NOTE: Each audio nodes should have unique id. If two nodes have the same id, the second node overwrites the first node.
+
 -}
 toHtml :
     { graph : Graph
@@ -358,7 +366,7 @@ encodeOutput out =
         Output (NodeId id) ->
             string id
 
-        KeyWithDestination { key, destination } ->
+        OutputToProp { key, destination } ->
             object [ ( "key", nodeId key ), ( "destination", string (destinationToString destination) ) ]
 
         Outputs os ->
@@ -586,7 +594,21 @@ encode graph =
 -- utils
 
 
-{-| -}
+{-| Name nodes automatically and connect them serially.
+
+    serial (NodeId "x") output x [ a, b, c ]
+
+is converted into a audio grapha as:
+
+```js
+[ { id = "x", output = "output", props = x }
+, { id = "x/0", output = "x", props = a }
+, { id = "x/0/0", output = "x/0", props = b }
+, { id = "x/0/0/0", output = "x/0/0", props = c }
+]
+```
+
+-}
 serial : NodeId -> Output -> List Props -> List Node
 serial id out nodes =
     case id of
@@ -628,7 +650,21 @@ serial id out nodes =
                         :: go idStr rem
 
 
-{-| -}
+{-| Name nodes automatically and connect in parallel.
+
+    parallel (NodeId "x") output x [ a, b, c ]
+
+is converted into a audio graph as:WW
+
+```js
+[ { id = "x", output = "output", props = x }
+, { id = "x/0", output = "x", props = a }
+, { id = "x/1", output = "x", props = b }
+, { id = "x/2", output = "x", props = c }
+]
+```
+
+-}
 parallel : NodeId -> Output -> Props -> List Props -> List Node
 parallel id out parent children =
     case id of
