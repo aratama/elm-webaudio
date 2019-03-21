@@ -114,7 +114,7 @@ customElements.define(
                         vgraph[key] = mediaStreamSource(jnode.output, { mediaStream: jnode.mediaStream });
                         break;
                     case "Oscillator":
-                        vgraph[key] = oscillator(jnode.output, { type: "sine", frequency: jnode.frequency, detune: 0, startTime: jnode.startTime, stopTime: jnode.stopTime });
+                        vgraph[key] = oscillator(jnode.output, { type: jnode.type, frequency: jnode.frequency, detune: 0, startTime: jnode.startTime, stopTime: jnode.stopTime });
                         break;
                     case "Panner":
                         vgraph[key] = panner(output, {

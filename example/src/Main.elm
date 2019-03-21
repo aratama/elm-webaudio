@@ -14,6 +14,7 @@ import WebAudio
 type alias Model =
     { now : Float
     , ex1 : Maybe Float
+    , ex1Type : WebAudio.OscillatorType
     , ex2 : Maybe Float
     , ex3 : Maybe Float
     , ex4 : Maybe Float
@@ -24,6 +25,7 @@ init : ( Model, Cmd Msg )
 init =
     ( { now = 0
       , ex1 = Nothing
+      , ex1Type = WebAudio.Sine
       , ex2 = Nothing
       , ex3 = Nothing
       , ex4 = Nothing
@@ -41,6 +43,7 @@ type Msg
     | Tick Float
     | PlayEx1
     | StopEx1
+    | SelectType WebAudio.OscillatorType
     | PlayEx2
     | StopEx2
     | PlayEx3
@@ -63,6 +66,9 @@ update msg model =
 
         StopEx1 ->
             ( { model | ex1 = Nothing }, Cmd.none )
+
+        SelectType t ->
+            ( { model | ex1Type = t }, Cmd.none )
 
         PlayEx2 ->
             ( { model | ex2 = Just model.now }, Cmd.none )
@@ -99,6 +105,12 @@ view model =
 
             Just _ ->
                 button [ onClick StopEx1 ] [ text "Stop" ]
+        , div []
+            [ button [ onClick (SelectType WebAudio.Sine) ] [ text "Sine" ]
+            , button [ onClick (SelectType WebAudio.Square) ] [ text "Square" ]
+            , button [ onClick (SelectType WebAudio.Triangle) ] [ text "Triangle" ]
+            , button [ onClick (SelectType WebAudio.Sawtooth) ] [ text "Sawtooth" ]
+            ]
         , h2 [] [ text "Example 2: BufferSource Node" ]
         , case model.ex2 of
             Nothing ->
@@ -132,7 +144,8 @@ view model =
                                 node : Int -> Float -> WebAudio.Props
                                 node nodeNumber pos =
                                     WebAudio.Oscillator
-                                        { frequency = WebAudio.Constant (440 * (2 ^ (toFloat nodeNumber / 12)))
+                                        { type_ = model.ex1Type
+                                        , frequency = WebAudio.Constant (440 * (2 ^ (toFloat nodeNumber / 12)))
                                         , startTime = WebAudio.Time (start + pos)
                                         , stopTime = WebAudio.Time (start + pos + 1)
                                         }
@@ -220,7 +233,8 @@ view model =
                               , output = WebAudio.Output (WebAudio.NodeId "0")
                               , props =
                                     WebAudio.Oscillator
-                                        { frequency = WebAudio.Constant 440
+                                        { type_ = WebAudio.Sine
+                                        , frequency = WebAudio.Constant 440
                                         , startTime = WebAudio.Time start
                                         , stopTime = WebAudio.Time (start + 3)
                                         }
@@ -233,7 +247,8 @@ view model =
                               , output = WebAudio.Outputs [ WebAudio.NodeId "0", WebAudio.NodeId "output" ]
                               , props =
                                     WebAudio.Oscillator
-                                        { frequency = WebAudio.Constant 1
+                                        { type_ = WebAudio.Sine
+                                        , frequency = WebAudio.Constant 1
                                         , startTime = WebAudio.Time start
                                         , stopTime = WebAudio.Time (start + 3)
                                         }

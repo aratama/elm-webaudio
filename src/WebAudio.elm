@@ -17,7 +17,7 @@ module WebAudio exposing
     , dynamicsCompressorDefaults
     , parallel
     , serial
-    , Destination(..)
+    , Destination(..), OscillatorType(..)
     )
 
 {-| elm-webaudio provides methods to play audio in Elm.
@@ -102,6 +102,15 @@ type Destination
     | GainProp
     | DelayTimeProp
     | PanProp
+
+
+{-| -}
+type OscillatorType
+    = Sine
+    | Square
+    | Sawtooth
+    | Triangle
+    | Custom
 
 
 {-| URL for an audio buffer.
@@ -220,7 +229,8 @@ type Props
         }
     | MediaStreamDestination
     | Oscillator
-        { frequency : Param
+        { type_ : OscillatorType
+        , frequency : Param
         , startTime : Time
         , stopTime : Time
         }
@@ -353,6 +363,26 @@ encodeAudioParam param =
 
         Methods methods ->
             list encodeAudioParamMethod methods
+
+
+encodeOscillatorType : OscillatorType -> Value
+encodeOscillatorType t =
+    Json.Encode.string <|
+        case t of
+            Sine ->
+                "sine"
+
+            Square ->
+                "square"
+
+            Triangle ->
+                "triangle"
+
+            Sawtooth ->
+                "sawtooth"
+
+            Custom ->
+                "custom"
 
 
 nodeId : NodeId -> Value
@@ -535,6 +565,7 @@ encodeGraphEntry nodep =
             object
                 [ ( "node", string "Oscillator" )
                 , ( "output", encodeOutput nodep.output )
+                , ( "type", encodeOscillatorType node.type_ )
                 , ( "frequency", encodeAudioParam node.frequency )
                 , ( "startTime", audioTime node.startTime )
                 , ( "stopTime", audioTime node.stopTime )
