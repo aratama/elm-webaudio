@@ -39,8 +39,8 @@ init =
 
 
 type Msg
-    = AssetLoaded (List String)
-    | Tick Float
+    = AssetLoaded (List WebAudio.Url)
+    | Tick WebAudio.Time
     | PlayEx1
     | StopEx1
     | SelectType WebAudio.OscillatorType
@@ -58,7 +58,7 @@ update msg model =
         AssetLoaded assets ->
             ( model, Cmd.none )
 
-        Tick audioTIme ->
+        Tick (WebAudio.Time audioTIme) ->
             ( { model | now = audioTIme }, Cmd.none )
 
         PlayEx1 ->

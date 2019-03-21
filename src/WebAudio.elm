@@ -11,13 +11,14 @@ module WebAudio exposing
     , Method(..)
     , DynamicsCompressorProps
     , Oversample(..)
+    , OscillatorType(..)
+    , Destination(..)
     , toHtml
     , output
     , dynamicsCompressor
     , dynamicsCompressorDefaults
     , parallel
     , serial
-    , Destination(..), OscillatorType(..)
     )
 
 {-| elm-webaudio provides methods to play audio in Elm.
@@ -51,6 +52,10 @@ module WebAudio exposing
 @docs DynamicsCompressorProps
 
 @docs Oversample
+
+@docs OscillatorType
+
+@docs Destination
 
 
 # Rendering
@@ -274,7 +279,7 @@ type alias Graph =
     List Node
 
 
-{-| Data type for DynamicsCompresor.
+{-| Properties of DynamicsCompresor.
 -}
 type alias DynamicsCompressorProps =
     { attack : Param
@@ -317,23 +322,28 @@ NOTE: Each audio nodes should have unique id. If two nodes have the same id, the
 -}
 toHtml :
     { graph : Graph
-    , assets : List String
-    , onTick : Float -> msg
-    , onProgress : List String -> msg
+    , assets : List Url
+    , onTick : Time -> msg
+    , onProgress : List Url -> msg
     }
     -> Html.Html msg
 toHtml { graph, assets, onTick, onProgress } =
     Html.node "elm-webaudio"
         [ Html.Attributes.property "graph" (encode graph)
-        , Html.Attributes.property "assets" (Json.Encode.list Json.Encode.string assets)
-        , Html.Events.on "tick" <| Json.Decode.map onTick (Json.Decode.at [ "detail" ] Json.Decode.float)
-        , Html.Events.on "assetLoaded" <| Json.Decode.map onProgress (Json.Decode.at [ "detail" ] (Json.Decode.list Json.Decode.string))
+        , Html.Attributes.property "assets" (Json.Encode.list encodeUrl assets)
+        , Html.Events.on "tick" <| Json.Decode.map (onTick << Time) (Json.Decode.at [ "detail" ] Json.Decode.float)
+        , Html.Events.on "assetLoaded" <| Json.Decode.map onProgress (Json.Decode.at [ "detail" ] (Json.Decode.list (Json.Decode.map Url Json.Decode.string)))
         ]
         []
 
 
 
 -- encoding
+
+
+encodeUrl : Url -> Value
+encodeUrl (Url url) =
+    Json.Encode.string url
 
 
 encodeAudioParamMethod : Method -> Value
