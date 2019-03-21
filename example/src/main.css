@@ -40,3 +40,9 @@ button {
   min-width: 240px;
   padding: 4px;
 }
+
+button.osci {
+  min-width: 100px;
+  margin-right: 4px;
+  margin-top: 8px;
+}

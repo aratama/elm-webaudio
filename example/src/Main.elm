@@ -2,7 +2,7 @@ module Main exposing (Model, Msg(..), init, main, update, view)
 
 import Browser
 import Html exposing (Html, button, div, h1, h2, img, text)
-import Html.Attributes exposing (src)
+import Html.Attributes exposing (class, src)
 import Html.Events exposing (onClick)
 import WebAudio
 
@@ -97,7 +97,7 @@ view : Model -> Html Msg
 view model =
     div []
         [ img [ src "/logo.svg" ] []
-        , h1 [] [ text "elm-webaudio Example" ]
+        , h1 [] [ text "elm-webaudio Examples" ]
         , h2 [] [ text "Example 1: Oscillator Node" ]
         , case model.ex1 of
             Nothing ->
@@ -106,10 +106,10 @@ view model =
             Just _ ->
                 button [ onClick StopEx1 ] [ text "Stop" ]
         , div []
-            [ button [ onClick (SelectType WebAudio.Sine) ] [ text "Sine" ]
-            , button [ onClick (SelectType WebAudio.Square) ] [ text "Square" ]
-            , button [ onClick (SelectType WebAudio.Triangle) ] [ text "Triangle" ]
-            , button [ onClick (SelectType WebAudio.Sawtooth) ] [ text "Sawtooth" ]
+            [ button [ class "osci", onClick (SelectType WebAudio.Sine) ] [ text "Sine" ]
+            , button [ class "osci", onClick (SelectType WebAudio.Square) ] [ text "Square" ]
+            , button [ class "osci", onClick (SelectType WebAudio.Triangle) ] [ text "Triangle" ]
+            , button [ class "osci", onClick (SelectType WebAudio.Sawtooth) ] [ text "Sawtooth" ]
             ]
         , h2 [] [ text "Example 2: BufferSource Node" ]
         , case model.ex2 of
