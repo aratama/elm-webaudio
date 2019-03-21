@@ -40,6 +40,10 @@ elm-webaudio fetch the resource as `ArrayBuffer` and decode it into `AudioBuffer
 
 See [the example](example) for more information.
 
+## API Docs
+
+elm-webaudio is not in package.elm-lang.org yet. See [elm-webaudio on elm-doc-preview](https://elm-doc-preview.netlify.com/?repo=aratama/elm-webaudio) for now.
+
 
 ## See Also
 

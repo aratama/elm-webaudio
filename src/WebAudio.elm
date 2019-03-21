@@ -311,7 +311,7 @@ dynamicsCompressor f =
     DynamicsCompressor (f dynamicsCompressorDefaults)
 
 
-{-| Special identifier representing final destination. This is just a `Output (NodeId "output")`.
+{-| Special identifier representing terminatory destination. This is just a shorthand for `[ Output (NodeId "output") ]`.
 -}
 output : Outputs
 output =
@@ -648,14 +648,14 @@ encode graph =
 -- utils
 
 
-{-| Name nodes automatically and connect them serially.
+{-| Name nodes automatically and connect them serially. An audio graph
 
-    serial (NodeId "x") output x [ a, b, c ]
+    serial (NodeId "x") out x [ a, b, c ]
 
 is converted into a audio grapha as:
 
 ```js
-[ { id = "x", output = "output", props = x }
+[ { id = "x", output = out, props = x }
 , { id = "x/0", output = "x", props = a }
 , { id = "x/0/0", output = "x/0", props = b }
 , { id = "x/0/0/0", output = "x/0/0", props = c }
@@ -704,14 +704,14 @@ serial id out nodes =
                         :: go idStr rem
 
 
-{-| Name nodes automatically and connect in parallel.
+{-| Name nodes automatically and connect in parallel. An audio graph
 
-    parallel (NodeId "x") output x [ a, b, c ]
+    parallel (NodeId "x") out x [ a, b, c ]
 
-is converted into a audio graph as:WW
+is converted into a audio graph as:
 
 ```js
-[ { id = "x", output = "output", props = x }
+[ { id = "x", output = out, props = x }
 , { id = "x/0", output = "x", props = a }
 , { id = "x/1", output = "x", props = b }
 , { id = "x/2", output = "x", props = c }
