@@ -1,7 +1,7 @@
 # elm-webaudio
 
 **elm-webaudio** provides methods to play audio in Elm via [Web Audio API](https://developer.mozilla.org/docs/Web/API/Web_Audio_API).
-It supports not only representing an audio graph with Elm's data types but also rendering actual an audio graph and playing audio. 
+It supports not only representing an audio graph with Elm's data types but also rendering an actual audio graph and playing audio. 
 elm-webaudio uses [benji6/virtual-audio-graph](https://github.com/benji6/virtual-audio-graph/) internally. 
 elm-webaudio intend to provide full access to Web Audio API, however it lacks some features right now.
 
@@ -17,7 +17,7 @@ view : Model -> Html Msg
 view model = WebAudio.toHtml
     { graph = WebAudio.serial (WebAudio.NodeId "basic-example")
         WebAudio.output
-        [ WebAudio.Gain { gain = WebAudio.Constant 1 }
+        [ WebAudio.Gain { gain = WebAudio.Constant 0.8 }
         , WebAudio.BufferSource
             { buffer = WebAudio.Url "New_Place_of_Work.mp3"
             , detune = 0
@@ -31,7 +31,7 @@ view model = WebAudio.toHtml
     }
 ```
 
-* `toHtml` converts a audio graph definition into Elm's HTML nodes. 
+* `toHtml` converts an audio graph definition into Elm's HTML nodes. 
 * If you want to refer an JavaScript's `AudioBuffer` object, just use an `Url` as a wapper of `String` instead of `AudioBuffer` object. 
 elm-webaudio fetch the resource as `ArrayBuffer` and decode it into `AudioBuffer`, re-render the audio graph after completing load automatically. 
 * You can preload audio resources by listing up urls in the `asset` property.
@@ -39,6 +39,7 @@ elm-webaudio fetch the resource as `ArrayBuffer` and decode it into `AudioBuffer
 * All audio nodes must have their identifiers. `serial` utility function gives their ids automatically and connect them serially. So only one node needs its id in the example. 
 
 See [the example](example) for more information.
+
 
 ## API Docs
 
