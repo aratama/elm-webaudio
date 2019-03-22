@@ -19,6 +19,7 @@ module WebAudio exposing
     , dynamicsCompressorDefaults
     , parallel
     , serial
+    , serial_
     )
 
 {-| elm-webaudio provides methods to play audio in Elm.
@@ -75,6 +76,8 @@ module WebAudio exposing
 
 @docs serial
 
+@docs serial_
+
 -}
 
 import Html
@@ -83,6 +86,7 @@ import Html.Events
 import Json.Decode
 import Json.Encode exposing (Value, bool, float, int, list, null, object, string)
 import List
+import List.Extra as List
 
 
 {-| Unique identifier of audio nodes in the audio graph.
@@ -665,43 +669,43 @@ is converted into a audio grapha as:
 -}
 serial : NodeId -> Outputs -> List Props -> List Node
 serial id out nodes =
-    case id of
-        NodeId idStr ->
-            case nodes of
-                [] ->
-                    []
+    serial_ id out <| List.map (\props -> ( True, props )) nodes
 
-                head :: rem ->
-                    let
-                        go : String -> List Props -> List Node
-                        go previous remaining =
-                            case remaining of
-                                [] ->
-                                    []
 
-                                y :: [] ->
-                                    [ { id = NodeId (previous ++ "/0")
-                                      , output = [ Output (NodeId previous) ]
-                                      , props = y
-                                      }
-                                    ]
+{-| An another version of `serial`. A tuple with `False` is bypassed.
 
-                                y :: ys ->
-                                    let
-                                        nid =
-                                            previous ++ "/0"
-                                    in
-                                    { id = NodeId nid
-                                    , output = [ Output (NodeId previous) ]
-                                    , props = y
-                                    }
-                                        :: go nid ys
-                    in
-                    { id = id
-                    , output = out
-                    , props = head
-                    }
-                        :: go idStr rem
+    serial_ (NodeId "x") out x [ ( True, a ), ( False, b ), ( True, c ) ]
+
+is converted into a audio grapha as:
+
+```js
+[ { id = "x", output = out, props = x }
+, { id = "x/0", output = "x", props = a }
+, { id = "x/0/0", output = "x/0", props = b }
+, { id = "x/0/0/0", output = "x/0", props = c }
+]
+```
+
+-}
+serial_ : NodeId -> Outputs -> List ( Bool, Props ) -> List Node
+serial_ firstNodeId out pairs =
+    case firstNodeId of
+        NodeId firstNodeIdStr ->
+            Tuple.second <|
+                List.mapAccuml
+                    (\( str, dest ) ( enabled, props ) ->
+                        ( ( str ++ "/0"
+                          , if enabled then
+                                [ Output (NodeId str) ]
+
+                            else
+                                dest
+                          )
+                        , { id = NodeId str, output = dest, props = props }
+                        )
+                    )
+                    ( firstNodeIdStr, out )
+                    pairs
 
 
 {-| Name nodes automatically and connect in parallel. An audio graph

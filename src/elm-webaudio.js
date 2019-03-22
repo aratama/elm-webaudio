@@ -39,6 +39,9 @@ customElements.define(
         }
 
         set graph(value) {
+            if (JSON.stringify(value) != JSON.stringify(this.audioGraphJson)) {
+                //debugger
+            }
             this.audioGraphJson = value;
             this.virtualAudioGraph.update(this.jsonToVirtualWebAudioGraph(value));
         }

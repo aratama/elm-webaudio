@@ -7,6 +7,11 @@ import Html.Events exposing (onClick)
 import WebAudio
 
 
+sample : WebAudio.Url
+sample =
+    WebAudio.Url "New_Place_of_Work.mp3"
+
+
 
 ---- MODEL ----
 
@@ -16,7 +21,7 @@ type alias Model =
     , ex1 : Maybe Float
     , ex1Type : WebAudio.OscillatorType
     , ex2 : Maybe Float
-    , ex3 : Maybe Float
+    , ex3 : { playing : Maybe Float, reverb : Bool }
     , ex4 : Maybe Float
     }
 
@@ -27,7 +32,7 @@ init =
       , ex1 = Nothing
       , ex1Type = WebAudio.Sine
       , ex2 = Nothing
-      , ex3 = Nothing
+      , ex3 = { playing = Nothing, reverb = True }
       , ex4 = Nothing
       }
     , Cmd.none
@@ -48,6 +53,7 @@ type Msg
     | StopEx2
     | PlayEx3
     | StopEx3
+    | SetReverb Bool
     | PlayEx4
     | StopEx4
 
@@ -77,10 +83,25 @@ update msg model =
             ( { model | ex2 = Nothing }, Cmd.none )
 
         PlayEx3 ->
-            ( { model | ex3 = Just model.now }, Cmd.none )
+            let
+                ex3 =
+                    model.ex3
+            in
+            ( { model | ex3 = { ex3 | playing = Just model.now } }, Cmd.none )
 
         StopEx3 ->
-            ( { model | ex3 = Nothing }, Cmd.none )
+            let
+                ex3 =
+                    model.ex3
+            in
+            ( { model | ex3 = { ex3 | playing = Nothing } }, Cmd.none )
+
+        SetReverb value ->
+            let
+                ex3 =
+                    model.ex3
+            in
+            ( { model | ex3 = { ex3 | reverb = value } }, Cmd.none )
 
         PlayEx4 ->
             ( { model | ex4 = Just model.now }, Cmd.none )
@@ -119,12 +140,13 @@ view model =
             Just _ ->
                 button [ onClick StopEx2 ] [ text "Stop" ]
         , h2 [] [ text "Example 3: Convolver Node" ]
-        , case model.ex3 of
+        , case model.ex3.playing of
             Nothing ->
                 button [ onClick PlayEx3 ] [ text "Play" ]
 
             Just _ ->
                 button [ onClick StopEx3 ] [ text "Stop" ]
+        , div [] [ button [ onClick (SetReverb True) ] [ text "Reverb On" ], button [ onClick (SetReverb False) ] [ text "Reverb Off" ] ]
         , h2 [] [ text "Example 4: Gain Node With Dynamic Frequency" ]
         , case model.ex4 of
             Nothing ->
@@ -198,27 +220,31 @@ view model =
                                 WebAudio.output
                                 [ WebAudio.Gain { gain = WebAudio.Constant 1 }
                                 , WebAudio.BufferSource
-                                    { buffer = WebAudio.Url "New_Place_of_Work.mp3"
+                                    { buffer = sample
                                     , detune = 0
                                     , startTime = WebAudio.Time start
                                     , stopTime = Nothing
                                     }
                                 ]
-                    , case model.ex3 of
+                    , case model.ex3.playing of
                         Nothing ->
                             []
 
                         Just start ->
-                            WebAudio.serial (WebAudio.NodeId "ex3")
+                            WebAudio.serial_ (WebAudio.NodeId "ex3")
                                 WebAudio.output
-                                [ WebAudio.Convolver { buffer = WebAudio.Url "s1_r1_b.mp3", normalize = False }
-                                , WebAudio.Gain { gain = WebAudio.Constant 1 }
-                                , WebAudio.BufferSource
-                                    { buffer = WebAudio.Url "New_Place_of_Work.mp3"
-                                    , detune = 0
-                                    , startTime = WebAudio.Time start
-                                    , stopTime = Nothing
-                                    }
+                            <|
+                                [ ( True, WebAudio.DynamicsCompressor WebAudio.dynamicsCompressorDefaults )
+                                , ( model.ex3.reverb, WebAudio.Convolver { buffer = WebAudio.Url "s1_r1_b.mp3", normalize = False } )
+                                , ( True, WebAudio.Gain { gain = WebAudio.Constant 2.5 } )
+                                , ( True
+                                  , WebAudio.BufferSource
+                                        { buffer = sample
+                                        , detune = 0
+                                        , startTime = WebAudio.Time (start + 0.5)
+                                        , stopTime = Nothing
+                                        }
+                                  )
                                 ]
                     , case model.ex4 of
                         Nothing ->
@@ -255,7 +281,7 @@ view model =
                               }
                             ]
                     ]
-            , assets = []
+            , assets = [ sample ]
             , onProgress = AssetLoaded
             , onTick = Tick
             }
