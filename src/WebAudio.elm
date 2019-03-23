@@ -20,6 +20,7 @@ module WebAudio exposing
     , parallel
     , serial
     , serial_
+    , parallel_
     )
 
 {-| elm-webaudio provides methods to play audio in Elm.
@@ -681,7 +682,6 @@ is converted into a audio grapha as:
 ```js
 [ { id = "x", output = out, props = x }
 , { id = "x/0", output = "x", props = a }
-, { id = "x/0/0", output = "x/0", props = b }
 , { id = "x/0/0/0", output = "x/0", props = c }
 ]
 ```
@@ -691,21 +691,26 @@ serial_ : NodeId -> Outputs -> List ( Bool, Props ) -> List Node
 serial_ firstNodeId out pairs =
     case firstNodeId of
         NodeId firstNodeIdStr ->
-            Tuple.second <|
-                List.mapAccuml
-                    (\( str, dest ) ( enabled, props ) ->
-                        ( ( str ++ "/0"
-                          , if enabled then
-                                [ Output (NodeId str) ]
+            List.filterMap identity <|
+                Tuple.second <|
+                    List.mapAccuml
+                        (\( str, dest ) ( enabled, props ) ->
+                            ( ( str ++ "/0"
+                              , if enabled then
+                                    [ Output (NodeId str) ]
 
-                            else
-                                dest
-                          )
-                        , { id = NodeId str, output = dest, props = props }
+                                else
+                                    dest
+                              )
+                            , if enabled then
+                                Just { id = NodeId str, output = dest, props = props }
+
+                              else
+                                Nothing
+                            )
                         )
-                    )
-                    ( firstNodeIdStr, out )
-                    pairs
+                        ( firstNodeIdStr, out )
+                        pairs
 
 
 {-| Name nodes automatically and connect in parallel. An audio graph
@@ -739,3 +744,28 @@ parallel id out parent children =
                         }
                     )
                     children
+
+
+parallel_ : NodeId -> Outputs -> Props -> List ( Bool, Props ) -> List Node
+parallel_ id out parent children =
+    case id of
+        NodeId idStr ->
+            { id = id
+            , output = out
+            , props = parent
+            }
+                :: List.filterMap identity
+                    (List.indexedMap
+                        (\i ( enabled, child ) ->
+                            if enabled then
+                                Just
+                                    { id = NodeId (idStr ++ "/" ++ String.fromInt i)
+                                    , output = [ Output id ]
+                                    , props = child
+                                    }
+
+                            else
+                                Nothing
+                        )
+                        children
+                    )
