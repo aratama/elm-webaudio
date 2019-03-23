@@ -280,15 +280,21 @@ audioGraph model =
                         , Just
                             { id = WebAudio.NodeId "ex3-buf"
                             , output =
-                                [ WebAudio.Output <|
-                                    WebAudio.NodeId <|
-                                        if model.ex3.reverb then
-                                            "ex3-gain"
+                                List.concat
+                                    [ [ WebAudio.Output <|
+                                            WebAudio.NodeId <|
+                                                if model.ex3.reverb then
+                                                    "ex3-gain"
 
-                                        else
-                                            "ex3-comp"
-                                , WebAudio.Output (WebAudio.NodeId "ex3-delay")
-                                ]
+                                                else
+                                                    "ex3-comp"
+                                      ]
+                                    , if model.ex3.delay then
+                                        [ WebAudio.Output (WebAudio.NodeId "ex3-delay") ]
+
+                                      else
+                                        []
+                                    ]
                             , props =
                                 WebAudio.BufferSource
                                     { buffer = sample
@@ -298,7 +304,11 @@ audioGraph model =
                                     }
                             }
                         ]
-                    , WebAudio.delay (WebAudio.NodeId "ex3-delay") [ WebAudio.Output (WebAudio.NodeId "ex3-comp") ]
+                    , if model.ex3.delay then
+                        WebAudio.delay 0.2 0.5 (WebAudio.NodeId "ex3-delay") [ WebAudio.Output (WebAudio.NodeId "ex3-comp") ]
+
+                      else
+                        []
                     ]
         , case model.ex4 of
             Nothing ->

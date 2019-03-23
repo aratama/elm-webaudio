@@ -831,8 +831,8 @@ parallel_ id out parent children =
                     )
 
 
-delay : NodeId -> Outputs -> List Node
-delay id out =
+delay : Float -> Float -> NodeId -> Outputs -> List Node
+delay gain time id out =
     case id of
         NodeId idStr ->
             let
@@ -841,10 +841,10 @@ delay id out =
             in
             [ { id = gainId
               , output = [ Output id ]
-              , props = Gain { gain = Constant 0.5 }
+              , props = Gain { gain = Constant gain }
               }
             , { id = id
               , output = Output gainId :: out
-              , props = Delay { delayTime = Constant 0.5, maxDelayTime = Constant 5 }
+              , props = Delay { delayTime = Constant time, maxDelayTime = Constant 5 }
               }
             ]
