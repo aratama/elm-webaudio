@@ -25,7 +25,7 @@ type alias Model =
     , ex1 : Maybe Float
     , ex1Type : WebAudio.OscillatorType
     , ex2 : Maybe Float
-    , ex3 : { playing : Maybe Float, reverb : Bool }
+    , ex3 : { playing : Maybe Float, reverb : Bool, delay : Bool }
     , ex4 : Maybe Float
     }
 
@@ -36,7 +36,7 @@ init =
       , ex1 = Nothing
       , ex1Type = WebAudio.Sine
       , ex2 = Nothing
-      , ex3 = { playing = Nothing, reverb = True }
+      , ex3 = { playing = Nothing, reverb = True, delay = False }
       , ex4 = Nothing
       }
     , Cmd.none
@@ -58,6 +58,7 @@ type Msg
     | PlayEx3
     | StopEx3
     | SetReverb Bool
+    | SetDelay Bool
     | PlayEx4
     | StopEx4
 
@@ -107,6 +108,13 @@ update msg model =
             in
             ( { model | ex3 = { ex3 | reverb = value } }, Cmd.none )
 
+        SetDelay value ->
+            let
+                ex3 =
+                    model.ex3
+            in
+            ( { model | ex3 = { ex3 | delay = value } }, Cmd.none )
+
         PlayEx4 ->
             ( { model | ex4 = Just model.now }, Cmd.none )
 
@@ -154,7 +162,14 @@ view model =
 
             Just _ ->
                 button [ onClick StopEx3 ] [ text "Stop" ]
-        , div [] [ button [ onClick (SetReverb True) ] [ text "Reverb On" ], button [ onClick (SetReverb False) ] [ text "Reverb Off" ] ]
+        , div []
+            [ button [ onClick (SetReverb True) ] [ text "Reverb On" ]
+            , button [ onClick (SetReverb False) ] [ text "Reverb Off" ]
+            ]
+        , div []
+            [ button [ onClick (SetDelay True) ] [ text "Delay On" ]
+            , button [ onClick (SetDelay False) ] [ text "Delay Off" ]
+            ]
         , h2 [] [ text "Example 4: Gain Node With Dynamic Frequency" ]
         , case model.ex4 of
             Nothing ->
@@ -172,8 +187,168 @@ view model =
         ]
 
 
-type alias Graph a =
-    List { id : String, output : List String, value : a }
+audioGraph : Model -> WebAudio.Graph
+audioGraph model =
+    List.concat
+        [ case model.ex1 of
+            Nothing ->
+                []
+
+            Just start ->
+                let
+                    node : Int -> Float -> WebAudio.Props
+                    node nodeNumber pos =
+                        WebAudio.Oscillator
+                            { type_ = model.ex1Type
+                            , frequency = WebAudio.Constant (440 * (2 ^ (toFloat nodeNumber / 12)))
+                            , startTime = WebAudio.Time (start + pos)
+                            , stopTime = WebAudio.Time (start + pos + 1)
+                            }
+                in
+                WebAudio.parallel (WebAudio.NodeId "gain")
+                    WebAudio.output
+                    (WebAudio.Gain { gain = WebAudio.Constant 0.05 })
+                    [ node 0 0
+                    , node 2 1
+                    , node 4 2
+                    , node 5 3
+                    , node 4 4
+                    , node 2 5
+                    , node 0 6
+
+                    --
+                    , node 4 8
+                    , node 5 9
+                    , node 7 10
+                    , node 9 11
+                    , node 7 12
+                    , node 5 13
+                    , node 4 14
+
+                    --
+                    , node 0 16
+                    , node 0 18
+                    , node 0 20
+                    , node 0 22
+
+                    --
+                    , node 0 24
+                    , node 0 24.5
+                    , node 2 25
+                    , node 2 25.5
+                    , node 4 26
+                    , node 4 26.5
+                    , node 5 27
+                    , node 5 27.5
+                    , node 4 28
+                    , node 2 29
+                    , node 0 30
+                    ]
+        , case model.ex2 of
+            Nothing ->
+                []
+
+            Just start ->
+                WebAudio.serial (WebAudio.NodeId "buffersource-test")
+                    WebAudio.output
+                    [ WebAudio.Gain { gain = WebAudio.Constant 1 }
+                    , WebAudio.BufferSource
+                        { buffer = sample
+                        , detune = 0
+                        , startTime = WebAudio.Time start
+                        , stopTime = Nothing
+                        }
+                    ]
+        , case model.ex3.playing of
+            Nothing ->
+                []
+
+            Just start ->
+                List.concat
+                    [ List.filterMap identity
+                        [ Just { id = WebAudio.NodeId "ex3-comp", output = WebAudio.output, props = WebAudio.dynamicsCompressor identity }
+                        , if model.ex3.reverb then
+                            Just { id = WebAudio.NodeId "ex3-conv", output = [ WebAudio.Output (WebAudio.NodeId "ex3-comp") ], props = WebAudio.Convolver { buffer = WebAudio.Url "s1_r1_b.mp3", normalize = False } }
+
+                          else
+                            Nothing
+                        , if model.ex3.reverb then
+                            Just { id = WebAudio.NodeId "ex3-gain", output = [ WebAudio.Output (WebAudio.NodeId "ex3-conv") ], props = WebAudio.Gain { gain = WebAudio.Constant 2.5 } }
+
+                          else
+                            Nothing
+                        , Just
+                            { id = WebAudio.NodeId "ex3-buf"
+                            , output =
+                                [ WebAudio.Output <|
+                                    WebAudio.NodeId <|
+                                        if model.ex3.reverb then
+                                            "ex3-gain"
+
+                                        else
+                                            "ex3-comp"
+                                , WebAudio.Output (WebAudio.NodeId "ex3-delay")
+                                ]
+                            , props =
+                                WebAudio.BufferSource
+                                    { buffer = sample
+                                    , detune = 0
+                                    , startTime = WebAudio.Time (start + 0.5)
+                                    , stopTime = Nothing
+                                    }
+                            }
+                        ]
+                    , WebAudio.delay (WebAudio.NodeId "ex3-delay") [ WebAudio.Output (WebAudio.NodeId "ex3-comp") ]
+                    ]
+        , case model.ex4 of
+            Nothing ->
+                []
+
+            Just start ->
+                [ { id = WebAudio.NodeId "ex4-0"
+                  , output = WebAudio.output
+                  , props = WebAudio.Gain { gain = WebAudio.Constant 0.2 }
+                  }
+                , { id = WebAudio.NodeId "ex4-1"
+                  , output = [ WebAudio.Output (WebAudio.NodeId "ex4-0") ]
+                  , props =
+                        WebAudio.Oscillator
+                            { type_ = WebAudio.Sine
+                            , frequency = WebAudio.Constant 440
+                            , startTime = WebAudio.Time start
+                            , stopTime = WebAudio.Time (start + 3)
+                            }
+                  }
+                , { id = WebAudio.NodeId "ex4-3"
+                  , output = [ WebAudio.Output (WebAudio.NodeId "output"), WebAudio.Output (WebAudio.NodeId "ex4-0") ]
+                  , props =
+                        WebAudio.Oscillator
+                            { type_ = WebAudio.Sine
+                            , frequency = WebAudio.Constant 1
+                            , startTime = WebAudio.Time start
+                            , stopTime = WebAudio.Time (start + 3)
+                            }
+                  }
+                , { id = WebAudio.NodeId "ex4-2"
+                  , output = [ WebAudio.OutputToProp { key = WebAudio.NodeId "ex4-1", destination = WebAudio.FrequencyProp } ]
+                  , props = WebAudio.Gain { gain = WebAudio.Constant 350 }
+                  }
+                ]
+        ]
+
+
+
+---- PROGRAM ----
+
+
+main : Program () Model Msg
+main =
+    Browser.element
+        { view = view
+        , init = \_ -> init
+        , update = update
+        , subscriptions = always Sub.none
+        }
 
 
 type Tree a
@@ -316,254 +491,5 @@ renderSvg graph =
         , Svg.g [ SvgA.transform "translate(50, 50)" ]
             [ Svg.Keyed.node "g" [ SvgA.id "connection-layer" ] renderConnections
             , Svg.Keyed.node "g" [ SvgA.id "circle-layer" ] (renderTree 0 0 tree)
-
-            {-
-                  , Svg.g []
-                      (List.indexedMap
-                          (\i node ->
-                              case node.id of
-                                  WebAudio.NodeId id ->
-                                      let
-                                          x =
-                                              100 * i
-
-                                          nextX =
-                                              100 * (i + 1)
-
-                                          y =
-                                              100
-                                      in
-                                      Svg.g []
-                                          [ Svg.circle [ SvgA.fill "lightgrey", SvgA.r (String.fromInt radius), SvgA.cx (String.fromInt x), SvgA.cy (String.fromInt y) ] []
-                                          ]
-                          )
-                          graph_
-                      )
-
-
-                     ,
-                     Svg.g []
-                         (List.indexedMap
-                             (\i node ->
-                                 case node.id of
-                                     WebAudio.NodeId id ->
-                                         let
-                                             x =
-                                                 100 * i
-
-                                             nextX =
-                                                 100 * (i - 1)
-
-                                             y =
-                                                 100
-                                         in
-                                         Svg.g []
-                                             [ if i == 0 then
-                                                 Svg.text ""
-
-                                               else
-                                                 Svg.line
-                                                     [ SvgA.stroke "black"
-                                                     , SvgA.strokeWidth "3"
-                                                     , SvgA.strokeLinecap "round"
-                                                     , SvgA.markerEnd "url(#triangle)"
-                                                     , SvgA.x1 (String.fromInt (x - radius))
-                                                     , SvgA.x2 (String.fromInt (nextX + radius))
-                                                     , SvgA.y1 (String.fromInt y)
-                                                     , SvgA.y2 (String.fromInt y)
-                                                     ]
-                                                     []
-                                             ]
-                             )
-                             graph_
-                         )
-
-               , Svg.g []
-                   (List.indexedMap
-                       (\i node ->
-                           case node.id of
-                               WebAudio.NodeId id ->
-                                   let
-                                       x =
-                                           100 * i
-
-                                       nextX =
-                                           100 * (i - 1)
-
-                                       y =
-                                           100
-                                   in
-                                   Svg.g []
-                                       [ Svg.text_ [ SvgA.x (String.fromInt x), SvgA.y (String.fromInt y) ] [ Svg.text id ]
-                                       , Svg.text_ [ SvgA.x (String.fromInt x), SvgA.y (String.fromInt (y + 16)) ]
-                                           [ Svg.text <|
-                                               if id == "output" then
-                                                   ""
-
-                                               else
-                                                   case node.props of
-                                                       WebAudio.BufferSource _ ->
-                                                           "Buf."
-
-                                                       WebAudio.Gain _ ->
-                                                           "Gain"
-
-                                                       WebAudio.Convolver _ ->
-                                                           "Conv."
-
-                                                       WebAudio.DynamicsCompressor _ ->
-                                                           "Comp."
-
-                                                       _ ->
-                                                           ""
-                                           ]
-                                       ]
-                       )
-                       graph_
-                   )
-            -}
             ]
         ]
-
-
-audioGraph : Model -> WebAudio.Graph
-audioGraph model =
-    List.concat
-        [ case model.ex1 of
-            Nothing ->
-                []
-
-            Just start ->
-                let
-                    node : Int -> Float -> WebAudio.Props
-                    node nodeNumber pos =
-                        WebAudio.Oscillator
-                            { type_ = model.ex1Type
-                            , frequency = WebAudio.Constant (440 * (2 ^ (toFloat nodeNumber / 12)))
-                            , startTime = WebAudio.Time (start + pos)
-                            , stopTime = WebAudio.Time (start + pos + 1)
-                            }
-                in
-                WebAudio.parallel (WebAudio.NodeId "gain")
-                    WebAudio.output
-                    (WebAudio.Gain { gain = WebAudio.Constant 0.05 })
-                    [ node 0 0
-                    , node 2 1
-                    , node 4 2
-                    , node 5 3
-                    , node 4 4
-                    , node 2 5
-                    , node 0 6
-
-                    --
-                    , node 4 8
-                    , node 5 9
-                    , node 7 10
-                    , node 9 11
-                    , node 7 12
-                    , node 5 13
-                    , node 4 14
-
-                    --
-                    , node 0 16
-                    , node 0 18
-                    , node 0 20
-                    , node 0 22
-
-                    --
-                    , node 0 24
-                    , node 0 24.5
-                    , node 2 25
-                    , node 2 25.5
-                    , node 4 26
-                    , node 4 26.5
-                    , node 5 27
-                    , node 5 27.5
-                    , node 4 28
-                    , node 2 29
-                    , node 0 30
-                    ]
-        , case model.ex2 of
-            Nothing ->
-                []
-
-            Just start ->
-                WebAudio.serial (WebAudio.NodeId "buffersource-test")
-                    WebAudio.output
-                    [ WebAudio.Gain { gain = WebAudio.Constant 1 }
-                    , WebAudio.BufferSource
-                        { buffer = sample
-                        , detune = 0
-                        , startTime = WebAudio.Time start
-                        , stopTime = Nothing
-                        }
-                    ]
-        , case model.ex3.playing of
-            Nothing ->
-                []
-
-            Just start ->
-                WebAudio.serial_ (WebAudio.NodeId "ex3")
-                    WebAudio.output
-                <|
-                    [ ( True, WebAudio.DynamicsCompressor WebAudio.dynamicsCompressorDefaults )
-                    , ( model.ex3.reverb, WebAudio.Convolver { buffer = WebAudio.Url "s1_r1_b.mp3", normalize = False } )
-                    , ( True, WebAudio.Gain { gain = WebAudio.Constant 2.5 } )
-                    , ( True
-                      , WebAudio.BufferSource
-                            { buffer = sample
-                            , detune = 0
-                            , startTime = WebAudio.Time (start + 0.5)
-                            , stopTime = Nothing
-                            }
-                      )
-                    ]
-        , case model.ex4 of
-            Nothing ->
-                []
-
-            Just start ->
-                [ { id = WebAudio.NodeId "0"
-                  , output = WebAudio.output
-                  , props = WebAudio.Gain { gain = WebAudio.Constant 0.2 }
-                  }
-                , { id = WebAudio.NodeId "1"
-                  , output = [ WebAudio.Output (WebAudio.NodeId "0") ]
-                  , props =
-                        WebAudio.Oscillator
-                            { type_ = WebAudio.Sine
-                            , frequency = WebAudio.Constant 440
-                            , startTime = WebAudio.Time start
-                            , stopTime = WebAudio.Time (start + 3)
-                            }
-                  }
-                , { id = WebAudio.NodeId "2"
-                  , output = [ WebAudio.OutputToProp { key = WebAudio.NodeId "1", destination = WebAudio.FrequencyProp } ]
-                  , props = WebAudio.Gain { gain = WebAudio.Constant 350 }
-                  }
-                , { id = WebAudio.NodeId "3"
-                  , output = [ WebAudio.Output (WebAudio.NodeId "0"), WebAudio.Output (WebAudio.NodeId "output") ]
-                  , props =
-                        WebAudio.Oscillator
-                            { type_ = WebAudio.Sine
-                            , frequency = WebAudio.Constant 1
-                            , startTime = WebAudio.Time start
-                            , stopTime = WebAudio.Time (start + 3)
-                            }
-                  }
-                ]
-        ]
-
-
-
----- PROGRAM ----
-
-
-main : Program () Model Msg
-main =
-    Browser.element
-        { view = view
-        , init = \_ -> init
-        , update = update
-        , subscriptions = always Sub.none
-        }

@@ -20,7 +20,7 @@ module WebAudio exposing
     , parallel
     , serial
     , serial_
-    , parallel_
+    , Node_(..), delay, parallel_, serial__
     )
 
 {-| elm-webaudio provides methods to play audio in Elm.
@@ -543,6 +543,7 @@ encodeGraphEntry nodep =
         BiquadFilter node ->
             object
                 [ ( "node", string "BiquadFilter" )
+                , ( "output", encodeOutputs nodep.output )
                 , ( "type_", encodeBiquadFilterType node.type_ )
                 , ( "frequency", encodeAudioParam node.frequency )
                 , ( "detune", encodeAudioParam node.detune )
@@ -550,14 +551,21 @@ encodeGraphEntry nodep =
                 ]
 
         ChannelMerger ->
-            object [ ( "node", string "ChannelMerger" ) ]
+            object
+                [ ( "node", string "ChannelMerger" )
+                , ( "output", encodeOutputs nodep.output )
+                ]
 
         ChannelSplitter ->
-            object [ ( "node", string "ChannelSplitter" ) ]
+            object
+                [ ( "node", string "ChannelSplitter" )
+                , ( "output", encodeOutputs nodep.output )
+                ]
 
         Delay node ->
             object
                 [ ( "node", string "Delay" )
+                , ( "output", encodeOutputs nodep.output )
                 , ( "delayTime", encodeAudioParam node.delayTime )
                 , ( "maxDelayTime", encodeAudioParam node.maxDelayTime )
                 ]
@@ -584,10 +592,16 @@ encodeGraphEntry nodep =
                 ]
 
         MediaElementSource node ->
-            object [ ( "node", string "MediaElementSource" ) ]
+            object
+                [ ( "node", string "MediaElementSource" )
+                , ( "output", encodeOutputs nodep.output )
+                ]
 
         MediaStreamDestination ->
-            object [ ( "node", string "MediaStreamDestination" ) ]
+            object
+                [ ( "node", string "MediaStreamDestination" )
+                , ( "output", encodeOutputs nodep.output )
+                ]
 
         Oscillator node ->
             object
@@ -602,6 +616,7 @@ encodeGraphEntry nodep =
         Panner node ->
             object
                 [ ( "node", string "Panner" )
+                , ( "output", encodeOutputs nodep.output )
                 , ( "coneInnerAngle", float node.coneInnerAngle )
                 , ( "coneOuterAngle", float node.coneOuterAngle )
                 , ( "coneOuterGain", float node.coneOuterGain )
@@ -621,12 +636,14 @@ encodeGraphEntry nodep =
         StereoPanner node ->
             object
                 [ ( "node", string "StereoPanner" )
+                , ( "output", encodeOutputs nodep.output )
                 , ( "pan", encodeAudioParam node.pan )
                 ]
 
         WaveShaper node ->
             object
                 [ ( "node", string "WaveShaper" )
+                , ( "output", encodeOutputs nodep.output )
                 , ( "curve", list float node.curve )
                 , ( "oversample"
                   , string <|
@@ -713,6 +730,49 @@ serial_ firstNodeId out pairs =
                         pairs
 
 
+type Node_
+    = Node_ (Maybe String) Bool Props
+
+
+serial__ : NodeId -> Outputs -> List Node_ -> List Node
+serial__ firstNodeId out pairs =
+    case firstNodeId of
+        NodeId firstNodeIdStr ->
+            List.filterMap identity <|
+                Tuple.second <|
+                    List.mapAccuml
+                        (\( currentId, dest ) (Node_ name enabled props) ->
+                            let
+                                currentName =
+                                    Maybe.withDefault currentId name
+
+                                nextId =
+                                    currentName ++ "/0"
+
+                                nextOutput =
+                                    if enabled then
+                                        [ Output (NodeId currentName) ]
+
+                                    else
+                                        dest
+
+                                currentProps =
+                                    if enabled then
+                                        Just
+                                            { id = NodeId currentName
+                                            , output = dest
+                                            , props = props
+                                            }
+
+                                    else
+                                        Nothing
+                            in
+                            ( ( nextId, nextOutput ), currentProps )
+                        )
+                        ( firstNodeIdStr, out )
+                        pairs
+
+
 {-| Name nodes automatically and connect in parallel. An audio graph
 
     parallel (NodeId "x") out x [ a, b, c ]
@@ -769,3 +829,22 @@ parallel_ id out parent children =
                         )
                         children
                     )
+
+
+delay : NodeId -> Outputs -> List Node
+delay id out =
+    case id of
+        NodeId idStr ->
+            let
+                gainId =
+                    NodeId (idStr ++ "/gain")
+            in
+            [ { id = gainId
+              , output = [ Output id ]
+              , props = Gain { gain = Constant 0.5 }
+              }
+            , { id = id
+              , output = Output gainId :: out
+              , props = Delay { delayTime = Constant 0.5, maxDelayTime = Constant 5 }
+              }
+            ]
