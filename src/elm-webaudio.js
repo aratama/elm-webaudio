@@ -120,7 +120,7 @@ customElements.define(
                         vgraph[key] = oscillator(jnode.output, { type: jnode.type, frequency: jnode.frequency, detune: 0, startTime: jnode.startTime, stopTime: jnode.stopTime });
                         break;
                     case "Panner":
-                        vgraph[key] = panner(output, {
+                        vgraph[key] = panner(jnode.output, {
                             coneInnerAngle: jnode.coneInnerAngle,
                             coneOuterAngle: jnode.coneOuterAngle,
                             coneOuterGain: jnode.coneOuterGain,
@@ -134,10 +134,10 @@ customElements.define(
                         });
                         break;
                     case "StereoPanner":
-                        vgraph[key] = stereoPanner(output, { pan: jnode.pan })
+                        vgraph[key] = stereoPanner(jnode.output, { pan: jnode.pan })
                         break;
                     case "WaveShaper":
-                        vgraph[key] = waveShaper(output, {
+                        vgraph[key] = waveShaper(jnode.output, {
                             curve: Float32Array.from(jnode.curve),
                             oversample: jnode.oversample
                         })
