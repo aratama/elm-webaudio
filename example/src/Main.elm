@@ -1,9 +1,10 @@
 module Main exposing (Model, Msg(..), init, main, update, view)
 
 import Browser
-import Html exposing (Html, button, div, h1, h2, img, text)
-import Html.Attributes exposing (class, src)
-import Html.Events exposing (onClick)
+import Html exposing (Html, button, div, h1, h2, img, input, text)
+import Html.Attributes as Html exposing (class, src)
+import Html.Events as Html exposing (onClick)
+import Json.Decode as Decode
 import List.Extra as List
 import Svg
 import Svg.Attributes as SvgA
@@ -25,7 +26,7 @@ type alias Model =
     , ex1 : Maybe Float
     , ex1Type : WebAudio.OscillatorType
     , ex2 : Maybe Float
-    , ex3 : { playing : Maybe Float, reverb : Bool, delay : Bool }
+    , ex3 : { playing : Maybe Float, reverb : Bool, delay : Bool, pan : Float }
     , ex4 : Maybe Float
     }
 
@@ -36,7 +37,7 @@ init =
       , ex1 = Nothing
       , ex1Type = WebAudio.Sine
       , ex2 = Nothing
-      , ex3 = { playing = Nothing, reverb = True, delay = False }
+      , ex3 = { playing = Nothing, reverb = False, delay = False, pan = 0.0 }
       , ex4 = Nothing
       }
     , Cmd.none
@@ -59,6 +60,7 @@ type Msg
     | StopEx3
     | SetReverb Bool
     | SetDelay Bool
+    | SetPan Float
     | PlayEx4
     | StopEx4
 
@@ -115,6 +117,13 @@ update msg model =
             in
             ( { model | ex3 = { ex3 | delay = value } }, Cmd.none )
 
+        SetPan value ->
+            let
+                ex3 =
+                    model.ex3
+            in
+            ( { model | ex3 = { ex3 | pan = value } }, Cmd.none )
+
         PlayEx4 ->
             ( { model | ex4 = Just model.now }, Cmd.none )
 
@@ -163,12 +172,35 @@ view model =
             Just _ ->
                 button [ onClick StopEx3 ] [ text "Stop" ]
         , div []
-            [ button [ onClick (SetReverb True) ] [ text "Reverb On" ]
-            , button [ onClick (SetReverb False) ] [ text "Reverb Off" ]
+            [ input [ Html.type_ "checkbox", Html.checked model.ex3.reverb, Html.on "input" (Decode.map SetReverb Html.targetChecked) ] []
+            , text "Reverb"
             ]
         , div []
-            [ button [ onClick (SetDelay True) ] [ text "Delay On" ]
-            , button [ onClick (SetDelay False) ] [ text "Delay Off" ]
+            [ input [ Html.type_ "checkbox", Html.checked model.ex3.delay, Html.on "input" (Decode.map SetDelay Html.targetChecked) ] []
+            , text "Delay"
+            ]
+        , div []
+            [ input
+                [ Html.type_ "range"
+                , Html.min "-1"
+                , Html.max "1"
+                , Html.step "0.02"
+                , Html.value (String.fromFloat model.ex3.pan)
+                , Html.on "input"
+                    (Decode.andThen
+                        (\str ->
+                            case String.toFloat str of
+                                Nothing ->
+                                    Decode.fail "invalid value"
+
+                                Just value ->
+                                    Decode.succeed (SetPan value)
+                        )
+                        Html.targetValue
+                    )
+                ]
+                []
+            , text "Pan"
             ]
         , h2 [] [ text "Example 4: Gain Node With Dynamic Frequency" ]
         , case model.ex4 of
@@ -215,34 +247,6 @@ audioGraph model =
                     , node 4 4
                     , node 2 5
                     , node 0 6
-
-                    --
-                    , node 4 8
-                    , node 5 9
-                    , node 7 10
-                    , node 9 11
-                    , node 7 12
-                    , node 5 13
-                    , node 4 14
-
-                    --
-                    , node 0 16
-                    , node 0 18
-                    , node 0 20
-                    , node 0 22
-
-                    --
-                    , node 0 24
-                    , node 0 24.5
-                    , node 2 25
-                    , node 2 25.5
-                    , node 4 26
-                    , node 4 26.5
-                    , node 5 27
-                    , node 5 27.5
-                    , node 4 28
-                    , node 2 29
-                    , node 0 30
                     ]
         , case model.ex2 of
             Nothing ->
@@ -266,7 +270,12 @@ audioGraph model =
             Just start ->
                 List.concat
                     [ List.filterMap identity
-                        [ Just { id = WebAudio.NodeId "ex3-comp", output = WebAudio.output, props = WebAudio.dynamicsCompressor identity }
+                        [ Just
+                            { id = WebAudio.NodeId "ex3-pan"
+                            , output = WebAudio.output
+                            , props = WebAudio.StereoPanner { pan = WebAudio.Constant model.ex3.pan }
+                            }
+                        , Just { id = WebAudio.NodeId "ex3-comp", output = [ WebAudio.Output (WebAudio.NodeId "ex3-pan") ], props = WebAudio.dynamicsCompressor identity }
                         , if model.ex3.reverb then
                             Just { id = WebAudio.NodeId "ex3-conv", output = [ WebAudio.Output (WebAudio.NodeId "ex3-comp") ], props = WebAudio.Convolver { buffer = WebAudio.Url "s1_r1_b.mp3", normalize = False } }
 
@@ -466,8 +475,8 @@ renderSvg graph =
                                             ( "connection-" ++ idStr ++ "-" ++ outId
                                             , Svg.path
                                                 [ SvgA.id <| "connection-" ++ idStr ++ "-" ++ outId
-                                                , Html.Attributes.attribute "data-from" idStr
-                                                , Html.Attributes.attribute "data-to" outId
+                                                , Html.attribute "data-from" idStr
+                                                , Html.attribute "data-to" outId
                                                 , SvgA.stroke "black"
                                                 , SvgA.strokeWidth "3"
                                                 , SvgA.strokeLinecap "round"
