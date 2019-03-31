@@ -96,7 +96,7 @@ customElements.define(
                         vgraph[key] = channelSplitter(jnode.output, {});
                         break;
                     case "Convolver":
-                        vgraph[key] = convolver(jnode.output, { buffer: this.getAudioBuffer(jnode.buffer) });
+                        vgraph[key] = convolver(jnode.output, { buffer: this.getAudioBuffer(jnode.buffer), normalize: jnode.normalize });
                         break;
                     case "Delay":
                         vgraph[key] = delay(jnode.output, { delayTime: jnode.delayTime });
