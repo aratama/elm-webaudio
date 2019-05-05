@@ -23,37 +23,56 @@ customElements.define(
     class extends HTMLElement {
         constructor() {
             super();
-            this.virtualAudioGraph = createVirtualAudioGraph();
+            this.virtualAudioGraph = null;
             this.audioGraphJson = [];
             this.audioBufferMap = new Map();
             this.timerEnabled = true;
             this.wait = 40;
-            const start = () => {
-                const event = new CustomEvent("tick", { detail: this.virtualAudioGraph.currentTime });
-                this.dispatchEvent(event);
+            const go = () => {
+                if (this.virtualAudioGraph) {
+                    const event = new CustomEvent("tick", { detail: this.virtualAudioGraph.currentTime });
+                    this.dispatchEvent(event);
+                }
                 if (this.timerEnabled) {
-                    setTimeout(start, this.wait);
+                    setTimeout(go, this.wait);
                 }
             }
-            start();
+            go();
+            this.prepareAudioGraph();
+        }
+
+        prepareAudioGraph() {
+            if (!this.virtualAudioGraph) {
+                try {
+                    this.virtualAudioGraph = createVirtualAudioGraph();
+                } catch {
+                    // ignore
+                }
+            }
         }
 
         set graph(value) {
-            if (JSON.stringify(value) != JSON.stringify(this.audioGraphJson)) {
-                //debugger
-            }
+            this.prepareAudioGraph();
             this.audioGraphJson = value;
-            this.virtualAudioGraph.update(this.jsonToVirtualWebAudioGraph(value));
+            if (this.virtualAudioGraph) {
+                this.virtualAudioGraph.update(this.jsonToVirtualWebAudioGraph(value));
+            }
         }
 
         set assets(value) {
-            for (let url of value) {
-                this.getAudioBuffer(url);
+            this.prepareAudioGraph();
+            if (this.virtualAudioGraph) {
+                for (let url of value) {
+                    this.getAudioBuffer(url);
+                }
             }
         }
 
         connectedCallback() {
-            this.virtualAudioGraph.update({});
+            this.prepareAudioGraph();
+            if (this.virtualAudioGraph) {
+                this.virtualAudioGraph.update({});
+            }
         }
 
         disconnectedCallback() {
@@ -151,27 +170,31 @@ customElements.define(
         }
 
         getAudioBuffer(url) {
-            const buffer = this.audioBufferMap.get(url);
-            if (!url) {
-                return null;
-            } else if (!this.virtualAudioGraph) {
-                return null;
-            } else if (buffer === "loading") {
-                return null;
-            } else if (buffer) {
-                return buffer;
-            } else {
-                this.audioBufferMap.set(url, "loading");
-                fetch(url).then(response => {
-                    return response.arrayBuffer().then(arrayBuffer => {
-                        return this.virtualAudioGraph.audioContext.decodeAudioData(arrayBuffer).then(decoded => {
-                            this.audioBufferMap.set(url, decoded);
-                            this.virtualAudioGraph.update(this.jsonToVirtualWebAudioGraph(this.audioGraphJson));
+            if (this.virtualAudioGraph) {
+                const buffer = this.audioBufferMap.get(url);
+                if (!url) {
+                    return null;
+                } else if (!this.virtualAudioGraph) {
+                    return null;
+                } else if (buffer === "loading") {
+                    return null;
+                } else if (buffer) {
+                    return buffer;
+                } else {
+                    this.audioBufferMap.set(url, "loading");
+                    fetch(url).then(response => {
+                        return response.arrayBuffer().then(arrayBuffer => {
+                            return this.virtualAudioGraph.audioContext.decodeAudioData(arrayBuffer).then(decoded => {
+                                this.audioBufferMap.set(url, decoded);
+                                this.virtualAudioGraph.update(this.jsonToVirtualWebAudioGraph(this.audioGraphJson));
+                            });
                         });
+                    }).catch(err => {
+                        console.error(url + err);
                     });
-                }).catch(err => {
-                    console.error(url + err);
-                });
+                    return null;
+                }
+            } else {
                 return null;
             }
         }
