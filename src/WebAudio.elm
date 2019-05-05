@@ -340,7 +340,7 @@ toHtml { graph, assets, onTick, onProgress } =
         [ Html.Attributes.property "graph" (encode graph)
         , Html.Attributes.property "assets" (Json.Encode.list encodeUrl assets)
         , Html.Events.on "tick" <| Json.Decode.map (onTick << Time) (Json.Decode.at [ "detail" ] Json.Decode.float)
-        , Html.Events.on "assetLoaded" <| Json.Decode.map onProgress (Json.Decode.at [ "detail" ] (Json.Decode.list (Json.Decode.map Url Json.Decode.string)))
+        , Html.Events.on "progress" <| Json.Decode.map onProgress (Json.Decode.at [ "detail" ] (Json.Decode.list (Json.Decode.map Url Json.Decode.string)))
         ]
         []
 

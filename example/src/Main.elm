@@ -1,7 +1,7 @@
 module Main exposing (Model, Msg(..), init, main, update, view)
 
 import Browser
-import Html exposing (Html, button, div, h1, h2, img, input, text)
+import Html exposing (Html, button, div, h1, h2, img, input, li, text, ul)
 import Html.Attributes as Html exposing (class, src)
 import Html.Events as Html exposing (onClick)
 import Json.Decode as Decode
@@ -23,6 +23,7 @@ sample =
 
 type alias Model =
     { now : Float
+    , assets : List WebAudio.Url
     , ex1 : Maybe Float
     , ex1Type : WebAudio.OscillatorType
     , ex2 : Maybe Float
@@ -34,6 +35,7 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     ( { now = 0
+      , assets = []
       , ex1 = Nothing
       , ex1Type = WebAudio.Sine
       , ex2 = Nothing
@@ -69,7 +71,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         AssetLoaded assets ->
-            ( model, Cmd.none )
+            ( { model | assets = assets }, Cmd.none )
 
         Tick (WebAudio.Time audioTIme) ->
             ( { model | now = audioTIme }, Cmd.none )
@@ -144,6 +146,8 @@ view model =
     div []
         [ img [ src "/logo.svg" ] []
         , h1 [] [ text "elm-webaudio Examples" ]
+        , h2 [] [ text "Loaded Assets" ]
+        , ul [] (List.map (\(WebAudio.Url url) -> li [] [ text url ]) model.assets)
         , h2 [] [ text "Example 1: Oscillator Node" ]
         , case model.ex1 of
             Nothing ->
