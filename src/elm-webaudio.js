@@ -47,6 +47,7 @@ customElements.define(
             if (!this.virtualAudioGraph) {
                 try {
                     this.virtualAudioGraph = createVirtualAudioGraph();
+                    this.decodeBuffers()
                 } catch {
                     // ignore
                 }
@@ -213,16 +214,19 @@ customElements.define(
                 if (arrayBuffer === "loading") {
                     // ignore
                 } else if (arrayBuffer instanceof ArrayBuffer) {
-                    // ignore
-                    this.audioBufferMap.set(url, "decoding");
-                    return this.virtualAudioGraph.audioContext.decodeAudioData(arrayBuffer).then(decoded => {
-                        this.audioBufferMap.set(url, decoded);
-                        this.virtualAudioGraph.update(this.jsonToVirtualWebAudioGraph(this.audioGraphJson));
-                        this.progress();
-                    }).catch(e => {
-                        this.audioBufferMap.delete(url);
-                        console.error("decodeBuffers: " + e + ", url: " + url);
-                    });
+                    if (this.audioBufferMap) {
+                        this.audioBufferMap.set(url, "decoding");
+                        return this.virtualAudioGraph.audioContext.decodeAudioData(arrayBuffer).then(decoded => {
+                            this.audioBufferMap.set(url, decoded);
+                            this.virtualAudioGraph.update(this.jsonToVirtualWebAudioGraph(this.audioGraphJson));
+                            this.progress();
+                        }).catch(e => {
+                            this.audioBufferMap.delete(url);
+                            console.error("decodeBuffers: " + e + ", url: " + url);
+                        });
+                    } else {
+                        // ignore
+                    }
                 } else if (arrayBuffer === "decoding") {
                     // ignore
                 } else if (arrayBuffer instanceof AudioBuffer) {
