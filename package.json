@@ -11,6 +11,6 @@
   "author": "aratama",
   "license": "ISC",
   "dependencies": {
-    "virtual-audio-graph": "^1.1.0"
+    "virtual-audio-graph": "^1.1.1"
   }
 }
