@@ -18,9 +18,12 @@ module WebAudio exposing
     , dynamicsCompressor
     , dynamicsCompressorDefaults
     , parallel
+    , parallel_
     , serial
     , serial_
-    , Node_(..), delay, parallel_, serial__
+    , serial__
+    , delay
+    , Node_(..)
     )
 
 {-| elm-webaudio provides methods to play audio in Elm.
@@ -75,9 +78,17 @@ module WebAudio exposing
 
 @docs parallel
 
+@docs parallel_
+
 @docs serial
 
 @docs serial_
+
+@docs serial__
+
+@docs delay
+
+@docs Node_
 
 -}
 
@@ -782,10 +793,12 @@ serial_ firstNodeId out pairs =
                         pairs
 
 
+{-| -}
 type Node_
     = Node_ (Maybe String) Bool Props
 
 
+{-| -}
 serial__ : NodeId -> Outputs -> List Node_ -> List Node
 serial__ firstNodeId out pairs =
     case firstNodeId of
@@ -858,6 +871,7 @@ parallel id out parent children =
                     children
 
 
+{-| -}
 parallel_ : NodeId -> Outputs -> Props -> List ( Bool, Props ) -> List Node
 parallel_ id out parent children =
     case id of
@@ -883,6 +897,7 @@ parallel_ id out parent children =
                     )
 
 
+{-| -}
 delay : Float -> Float -> NodeId -> Outputs -> List Node
 delay gain time id out =
     case id of
