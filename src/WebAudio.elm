@@ -582,6 +582,11 @@ encodeGraphEntry nodep =
             object
                 [ ( "node", string "DynamicsCompressor" )
                 , ( "output", encodeOutputs nodep.output )
+                , ( "threshold", encodeAudioParam node.threshold )
+                , ( "knee", encodeAudioParam node.knee )
+                , ( "ratio", encodeAudioParam node.ratio )
+                , ( "attack", encodeAudioParam node.attack )
+                , ( "release", encodeAudioParam node.release )
                 ]
 
         Gain node ->

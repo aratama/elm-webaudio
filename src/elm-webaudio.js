@@ -85,92 +85,103 @@ customElements.define(
             this.timerEnabled = false;
         }
 
-        jsonToVirtualWebAudioGraph(json) {
+        jsonToVirtualWebAudioGraph(nodes) {
             const vgraph = {};
-            Object.keys(json).forEach(key => {
-                const jnode = json[key];
-                switch (jnode.node) {
+            Object.keys(nodes).forEach(key => {
+                const props = nodes[key];
+                switch (props.node) {
                     case "Analyser":
-                        vgraph[key] = analyser(jnode.output, {
-                            fftSize: jnode.fftSize,
-                            minDecibels: jnode.minDecibels,
-                            maxDecibels: jnode.maxDecibels,
-                            smoothingTimeConstant: jnode.smoothingTimeConstant
+                        vgraph[key] = analyser(props.output, {
+                            fftSize: props.fftSize,
+                            minDecibels: props.minDecibels,
+                            maxDecibels: props.maxDecibels,
+                            smoothingTimeConstant: props.smoothingTimeConstant
                         });
                         break;
                     case "BufferSource":
-                        vgraph[key] = bufferSource(jnode.output, {
-                            buffer: this.getAudioBuffer(jnode.buffer),
-                            startTime: jnode.startTime,
-                            stopTime: jnode.stopTime,
-                            detune: jnode.detune
-                        });
+                        const audioBuffer = this.getAudioBuffer(props.buffer);
+                        if (audioBuffer) {
+                            vgraph[key] = bufferSource(props.output, {
+                                buffer: audioBuffer,
+                                startTime: props.startTime,
+                                stopTime: props.stopTime,
+                                detune: props.detune
+                            });
+                        } else {
+                            vgraph[key] = gain(props.output, {});
+                        }
                         break;
                     case "BiquadFilter":
-                        vgraph[key] = biquadFilter(jnode.output, {
-                            type: jnode.type,
-                            frequency: jnode.frequency,
-                            detune: jnode.detune,
-                            Q: jnode.Q
+                        vgraph[key] = biquadFilter(props.output, {
+                            type: props.type,
+                            frequency: props.frequency,
+                            detune: props.detune,
+                            Q: props.Q
                         });
                         break;
                     case "ChannelMerger":
-                        vgraph[key] = channelMerger(jnode.output, {});
+                        vgraph[key] = channelMerger(props.output, {});
                         break;
                     case "ChannelSplitter":
-                        vgraph[key] = channelSplitter(jnode.output, {});
+                        vgraph[key] = channelSplitter(props.output, {});
                         break;
                     case "Convolver":
-                        // Workaround: convolver's buffer can't be null!
-                        const ir = this.getAudioBuffer(jnode.buffer);
+                        // Workaround: `buffer` property of convolver can't be null.
+                        const ir = this.getAudioBuffer(props.buffer);
                         if (ir) {
-                            vgraph[key] = convolver(jnode.output, { buffer: ir, normalize: jnode.normalize });
+                            vgraph[key] = convolver(props.output, { buffer: ir, normalize: props.normalize });
                         } else {
-                            vgraph[key] = gain(jnode.output);
+                            vgraph[key] = gain(props.output);
                         }
                         break;
                     case "Delay":
-                        vgraph[key] = delay(jnode.output, { delayTime: jnode.delayTime });
+                        vgraph[key] = delay(props.output, { delayTime: props.delayTime });
                         break;
                     case "DynamicsCompressor":
-                        vgraph[key] = dynamicsCompressor(jnode.output, { buffer: this.getAudioBuffer(jnode.buffer) });
+                        vgraph[key] = dynamicsCompressor(props.output, {
+                            threshold: props.threshold,
+                            knee: props.knee,
+                            ratio: props.ratio,
+                            attack: props.attack,
+                            release: props.release
+                        });
                         break;
                     case "Gain":
-                        vgraph[key] = gain(jnode.output, { gain: jnode.gain });
+                        vgraph[key] = gain(props.output, { gain: props.gain });
                         break;
                     case "MediaElementSource":
-                        vgraph[key] = mediaElementSource(jnode.output, { mediaElement: document.getElementById(jnode.mediaElement) });
+                        vgraph[key] = mediaElementSource(props.output, { mediaElement: document.getElementById(props.mediaElement) });
                         break;
                     case "MediaStreamDestination":
-                        vgraph[key] = mediaStreamDestination(jnode.output, {});
+                        vgraph[key] = mediaStreamDestination(props.output, {});
                         break;
                     case "MediaStreamSource":
-                        vgraph[key] = mediaStreamSource(jnode.output, { mediaStream: jnode.mediaStream });
+                        vgraph[key] = mediaStreamSource(props.output, { mediaStream: props.mediaStream });
                         break;
                     case "Oscillator":
-                        vgraph[key] = oscillator(jnode.output, { type: jnode.type, frequency: jnode.frequency, detune: 0, startTime: jnode.startTime, stopTime: jnode.stopTime });
+                        vgraph[key] = oscillator(props.output, { type: props.type, frequency: props.frequency, detune: 0, startTime: props.startTime, stopTime: props.stopTime });
                         break;
                     case "Panner":
-                        vgraph[key] = panner(jnode.output, {
-                            coneInnerAngle: jnode.coneInnerAngle,
-                            coneOuterAngle: jnode.coneOuterAngle,
-                            coneOuterGain: jnode.coneOuterGain,
-                            distanceModel: jnode.distanceModel,
-                            orientation: [jnode.orientatonX, jnode.orientationY, jnode.orientationZ],
-                            panningModel: jnode.pannerModel,
-                            position: [jnode.positionX, jnode.positionY, jnode.positionZ],
-                            maxDistance: jnode.maxDistance,
-                            refDistance: jnode.refDistance,
-                            rolloffFactor: jnode.rolloffFactor,
+                        vgraph[key] = panner(props.output, {
+                            coneInnerAngle: props.coneInnerAngle,
+                            coneOuterAngle: props.coneOuterAngle,
+                            coneOuterGain: props.coneOuterGain,
+                            distanceModel: props.distanceModel,
+                            orientation: [props.orientatonX, props.orientationY, props.orientationZ],
+                            panningModel: props.pannerModel,
+                            position: [props.positionX, props.positionY, props.positionZ],
+                            maxDistance: props.maxDistance,
+                            refDistance: props.refDistance,
+                            rolloffFactor: props.rolloffFactor,
                         });
                         break;
                     case "StereoPanner":
-                        vgraph[key] = stereoPanner(jnode.output, { pan: jnode.pan })
+                        vgraph[key] = stereoPanner(props.output, { pan: props.pan })
                         break;
                     case "WaveShaper":
-                        vgraph[key] = waveShaper(jnode.output, {
-                            curve: Float32Array.from(jnode.curve),
-                            oversample: jnode.oversample
+                        vgraph[key] = waveShaper(props.output, {
+                            curve: Float32Array.from(props.curve),
+                            oversample: props.oversample
                         })
                         break;
                     default:
