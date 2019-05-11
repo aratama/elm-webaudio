@@ -9,10 +9,21 @@ module WebAudio exposing
     , Output(..)
     , Param(..)
     , Method(..)
-    , DynamicsCompressorProps
     , Oversample(..)
     , OscillatorType(..)
     , Destination(..)
+    , AnalyserProps
+    , BufferSourceProps
+    , BiquadFilterProps
+    , ConvolverProps
+    , DelayProps
+    , DynamicsCompressorProps
+    , GainProps
+    , MediaElementSourceProps
+    , OscillatorProps
+    , PannerProps
+    , StereoPannerProps
+    , WaveShaperProps
     , toHtml
     , output
     , dynamicsCompressor
@@ -54,13 +65,38 @@ module WebAudio exposing
 
 @docs Method
 
-@docs DynamicsCompressorProps
-
 @docs Oversample
 
 @docs OscillatorType
 
 @docs Destination
+
+
+# Audio Node Properties
+
+@docs AnalyserProps
+
+@docs BufferSourceProps
+
+@docs BiquadFilterProps
+
+@docs ConvolverProps
+
+@docs DelayProps
+
+@docs DynamicsCompressorProps
+
+@docs GainProps
+
+@docs MediaElementSourceProps
+
+@docs OscillatorProps
+
+@docs PannerProps
+
+@docs StereoPannerProps
+
+@docs WaveShaperProps
 
 
 # Rendering
