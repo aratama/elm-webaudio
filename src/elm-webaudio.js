@@ -121,7 +121,13 @@ customElements.define(
                         vgraph[key] = channelSplitter(jnode.output, {});
                         break;
                     case "Convolver":
-                        vgraph[key] = convolver(jnode.output, { buffer: this.getAudioBuffer(jnode.buffer), normalize: jnode.normalize });
+                        // Workaround: convolver's buffer can't be null!
+                        const ir = this.getAudioBuffer(jnode.buffer);
+                        if (ir) {
+                            vgraph[key] = convolver(jnode.output, { buffer: ir, normalize: jnode.normalize });
+                        } else {
+                            vgraph[key] = gain(jnode.output);
+                        }
                         break;
                     case "Delay":
                         vgraph[key] = delay(jnode.output, { delayTime: jnode.delayTime });
