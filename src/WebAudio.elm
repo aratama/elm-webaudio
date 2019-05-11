@@ -205,71 +205,21 @@ type Oversample
 
 {-| -}
 type Props
-    = Analyser
-        { fftSize : Int
-        , minDecibels : Float
-        , maxDecibels : Float
-        , smoothingTimeConstant : Float
-        }
-    | BufferSource
-        { buffer : Url
-        , startTime : Time
-        , stopTime : Maybe Time
-        , detune : Int
-        }
-    | BiquadFilter
-        { type_ : BiquadFilterType
-        , frequency : Param
-        , detune : Param
-        , q : Param
-        }
+    = Analyser AnalyserProps
+    | BufferSource BufferSourceProps
+    | BiquadFilter BiquadFilterProps
     | ChannelMerger
     | ChannelSplitter
-    | Convolver
-        { buffer : Url
-        , normalize : Bool
-        }
-    | Delay
-        { delayTime : Param
-        , maxDelayTime : Param
-        }
+    | Convolver ConvolverProps
+    | Delay DelayProps
     | DynamicsCompressor DynamicsCompressorProps
-    | Gain
-        { gain : Param
-        }
-    | MediaElementSource
-        { mediaElement : MediaElementId
-        }
+    | Gain GainProps
+    | MediaElementSource MediaElementSourceProps
     | MediaStreamDestination
-    | Oscillator
-        { type_ : OscillatorType
-        , frequency : Param
-        , startTime : Time
-        , stopTime : Time
-        }
-    | Panner
-        { coneInnerAngle : Float
-        , coneOuterAngle : Float
-        , coneOuterGain : Float
-        , distanceModel : DistanceModel
-        , orientationX : Param
-        , orientationY : Param
-        , orientationZ : Param
-        , panningModel : PanningModel
-        , positionX : Param
-        , positionY : Param
-        , positionZ : Param
-        , maxDistance : Float
-        , refDistance : Float
-        , rolloffFactor : Float
-        }
-    | StereoPanner
-        { pan : Param
-        }
-    | WaveShaper
-        { curve : Float32Array
-        , oversample : Oversample
-        }
+    | Oscillator OscillatorProps
+    | Panner PannerProps
+    | StereoPanner StereoPannerProps
+    | WaveShaper WaveShaperProps
 
 
 {-| Audio node.
@@ -287,14 +237,111 @@ type alias Graph =
     List Node
 
 
-{-| Properties of DynamicsCompresor.
--}
+
+-- audio props
+
+
+{-| -}
+type alias AnalyserProps =
+    { fftSize : Int
+    , minDecibels : Float
+    , maxDecibels : Float
+    , smoothingTimeConstant : Float
+    }
+
+
+{-| -}
+type alias BufferSourceProps =
+    { buffer : Url
+    , startTime : Time
+    , stopTime : Maybe Time
+    , detune : Int
+    }
+
+
+{-| -}
+type alias BiquadFilterProps =
+    { type_ : BiquadFilterType
+    , frequency : Param
+    , detune : Param
+    , q : Param
+    }
+
+
+{-| -}
+type alias ConvolverProps =
+    { buffer : Url
+    , normalize : Bool
+    }
+
+
+{-| -}
+type alias DelayProps =
+    { delayTime : Param
+    , maxDelayTime : Param
+    }
+
+
+{-| -}
 type alias DynamicsCompressorProps =
     { attack : Param
     , knee : Param
     , ratio : Param
     , release : Param
     , threshold : Param
+    }
+
+
+{-| -}
+type alias GainProps =
+    { gain : Param
+    }
+
+
+{-| -}
+type alias MediaElementSourceProps =
+    { mediaElement : MediaElementId
+    }
+
+
+{-| -}
+type alias OscillatorProps =
+    { type_ : OscillatorType
+    , frequency : Param
+    , startTime : Time
+    , stopTime : Time
+    }
+
+
+{-| -}
+type alias PannerProps =
+    { coneInnerAngle : Float
+    , coneOuterAngle : Float
+    , coneOuterGain : Float
+    , distanceModel : DistanceModel
+    , orientationX : Param
+    , orientationY : Param
+    , orientationZ : Param
+    , panningModel : PanningModel
+    , positionX : Param
+    , positionY : Param
+    , positionZ : Param
+    , maxDistance : Float
+    , refDistance : Float
+    , rolloffFactor : Float
+    }
+
+
+{-| -}
+type alias StereoPannerProps =
+    { pan : Param
+    }
+
+
+{-| -}
+type alias WaveShaperProps =
+    { curve : Float32Array
+    , oversample : Oversample
     }
 
 
